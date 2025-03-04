@@ -391,17 +391,12 @@ object SigmaPredef {
         tT, None
       ),
       PredefFuncInfo(
-        //{ case (Ident(_, SFunc(_, rtpe, _)), Seq(id: Constant[SNumericType]@unchecked, default: SOption[tT])) =>
         { 
         case (Ident(_, SFunc(_, rtpe, _)), Seq(id: Constant[SNumericType]@unchecked, default)) =>
           val r: RegisterId = org.ergoplatform.ErgoBox.registerByIndex(SByte.downcast(id.value.asInstanceOf[AnyVal]))
           mkDeserializeRegister(
             r, rtpe,
-            //Option[Value[rtpe.type]](default.asOption[rtpe.type].get)
-            //Option[Value[rtpe.type]](default.asValue[rtpe.type])
-            //Some(default.asValue[rtpe.type])
-            Some(default)
-            //default.asInstanceOf[Option[Value[SType]]]
+            Some(default.asValue[rtpe.type])
           )
         }),
       OperationInfo(DeserializeRegister,
