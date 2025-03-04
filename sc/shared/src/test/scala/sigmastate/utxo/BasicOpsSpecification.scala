@@ -240,7 +240,7 @@ class BasicOpsSpecification extends CompilerTestingCommons
     )    
 
     test("executeFromSelfReg", customEnv, customExt,
-      "{val ba = executeFromSelfReg[Coll[Byte]](SELF.R4, getVar[Coll[Byte]](defaultVal)); ba.size == 2 }",
+      "{val ba = executeFromSelfReg[Coll[Byte]](4, getVar[Coll[Byte]](defaultVal)); ba.size == 2 }",
       null,
       true,
       additionalRegistersOpt = Some(Map(
