@@ -2,6 +2,7 @@ package sigma.ast
 
 import org.ergoplatform.ErgoAddressEncoder.NetworkPrefix
 import org.ergoplatform.{ErgoAddressEncoder, P2PKAddress}
+import org.ergoplatform.ErgoBox.RegisterId
 import scorex.util.encode.{Base16, Base58, Base64}
 import sigma.ast.SCollection.{SByteArray, SIntArray}
 import sigma.ast.SOption.SIntOption
@@ -386,10 +387,23 @@ object SigmaPredef {
     val ExecuteFromSelfRegFunc = PredefinedFunc("executeFromSelfReg",
       Lambda(
         Seq(paramT),
-        Array("id" -> SByte, "default" -> SOption(tT)),
+        Array("id" -> SInt, "default" -> SOption(tT)),
         tT, None
       ),
-      PredefFuncInfo(undefined),
+      PredefFuncInfo(
+        //{ case (Ident(_, SFunc(_, rtpe, _)), Seq(id: Constant[SNumericType]@unchecked, default: SOption[tT])) =>
+        { 
+        case (Ident(_, SFunc(_, rtpe, _)), Seq(id: Constant[SNumericType]@unchecked, default)) =>
+          val r: RegisterId = org.ergoplatform.ErgoBox.registerByIndex(SByte.downcast(id.value.asInstanceOf[AnyVal]))
+          mkDeserializeRegister(
+            r, rtpe,
+            //Option[Value[rtpe.type]](default.asOption[rtpe.type].get)
+            //Option[Value[rtpe.type]](default.asValue[rtpe.type])
+            //Some(default.asValue[rtpe.type])
+            Some(default)
+            //default.asInstanceOf[Option[Value[SType]]]
+          )
+        }),
       OperationInfo(DeserializeRegister,
         """Extracts SELF register as \lst{Coll[Byte]}, deserializes it to script
          | and then executes this script in the current context.

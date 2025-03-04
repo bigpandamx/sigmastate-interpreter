@@ -553,6 +553,17 @@ trait GraphBuilding extends Base with DefRewriting { IR: IRContext =>
         val e = stypeToElem(d.tpe)
         DeserializeContextDef(d, e)
 
+      case d: DeserializeRegister[T] =>
+        val e = stypeToElem(d.tpe)
+        //val f = stypeToElem(d.default)
+        //val f: Elem[T#WrappedType] = d.default match {
+        //  case Some(v) =>
+        //    stypeToElem(v.tpe)
+        //  case None =>
+        //    e
+        //}
+        DeserializeRegisterDef[T](d, e, e)
+
       case ValUse(valId, _) =>
         env.getOrElse(valId, !!!(s"ValUse $valId not found in environment $env"))
 

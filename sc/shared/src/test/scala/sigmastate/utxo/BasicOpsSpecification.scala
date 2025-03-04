@@ -1,10 +1,12 @@
 package sigmastate.utxo
 
-import org.ergoplatform.ErgoBox.{AdditionalRegisters, R6, R8}
+import org.ergoplatform.ErgoBox.{AdditionalRegisters, R4, R6, R8}
 import org.ergoplatform._
 import sigma.Colls
 import sigma.Extensions.ArrayOps
 import sigma.ast.SCollection.SByteArray
+import sigma.ast.SOption
+import sigma.ast.SOption.{OptionTypeConstrId, SIntOption}
 import sigma.ast.SType.AnyOps
 import sigma.data.{AvlTreeData, CAnyValue, CSigmaDslBuilder}
 import sigma.util.StringUtil._
@@ -202,6 +204,93 @@ class BasicOpsSpecification extends CompilerTestingCommons
       true
     )
   }
+
+  property("executeFromSelfReg - SigmaProp") {
+    val script = GT(Height, IntConstant(-1)).toSigmaProp
+    val scriptBytes = ValueSerializer.serialize(script)
+
+    val defScript = EQ(Plus(IntConstant(1), IntConstant(5)), 7).toSigmaProp
+    val defBytes = ValueSerializer.serialize(defScript)
+
+    val customExt = Seq(21.toByte -> ByteArrayConstant(defBytes))
+    val customEnv = Map(
+        "defaultVal" -> CAnyValue(21.toByte)
+    )
+
+    test("executeFromSelfReg", customEnv, customExt,
+      "executeFromSelfReg[SigmaProp](4, getVar[SigmaProp](defaultVal))",
+      null,
+      true,
+      additionalRegistersOpt = Some(Map(
+        reg1 -> ByteArrayConstant(scriptBytes)
+      ))
+    )
+  }
+
+  property("executeFromSelfReg - Coll[Byte]") {
+    val bytes = Slice(ByteArrayConstant(Colls.fromArray(Array.fill(5)(1.toByte))), IntConstant(1), IntConstant(3))
+    val scriptBytes = ValueSerializer.serialize(bytes)
+    
+    val dval = ByteArrayConstant(Colls.fromArray(Array.fill(3)(1.toByte)))
+    val defaultBytes = ValueSerializer.serialize(dval)
+    
+    val customExt = Seq(21.toByte -> ByteArrayConstant(defaultBytes))
+    val customEnv = Map(
+        "defaultVal" -> CAnyValue(21.toByte)
+    )    
+
+    test("executeFromSelfReg", customEnv, customExt,
+      "{val ba = executeFromSelfReg[Coll[Byte]](SELF.R4, getVar[Coll[Byte]](defaultVal)); ba.size == 2 }",
+      null,
+      true,
+      additionalRegistersOpt = Some(Map(
+        reg1 -> ByteArrayConstant(scriptBytes)
+      ))
+    )
+  }
+
+  property("executeFromSelfReg - Int") {
+    val bytes = Plus(IntConstant(2), IntConstant(3))
+    val scriptBytes = ValueSerializer.serialize(bytes)
+
+    test("executeFromSelfReg", env, ext,
+      "{ executeFromSelfReg[Int](4, getVar[Int](1)) == 5 }",
+      null,
+      true,
+      additionalRegistersOpt = Some(Map(
+        reg1 -> ByteArrayConstant(scriptBytes)
+      ))
+    )
+  }
+
+
+  // executeFromSelfReg failure tests - Most fail the same way as these
+  // Coll[Bytes] doesn't and attempts to get the default value but fails
+
+  property("executeFromSelfReg - Int - Reduct") {
+    val bytes = Plus(IntConstant(2), IntConstant(3))
+    val scriptBytes = ValueSerializer.serialize(bytes)
+
+    test("executeFromSelfReg", env, ext,
+      "{ executeFromSelfReg[Int](4, getVar[Int](1)) == 5 }",
+      null,
+      true,
+      additionalRegistersOpt = Some(Map())
+    )
+  }
+
+  property("executeFromSelfReg - Int - Throws") {
+    val bytes = Plus(IntConstant(2), IntConstant(3))
+    val scriptBytes = ValueSerializer.serialize(bytes)
+
+    test("executeFromSelfReg", env, ext,
+      "{ executeFromSelfReg[Int](4, getVar[Int](1)) == 5 }",
+      null,
+      true
+    )
+  }
+
+  // end executeFromSelfReg failure tests
 
   property("Relation operations") {
     test("R1", env, ext,

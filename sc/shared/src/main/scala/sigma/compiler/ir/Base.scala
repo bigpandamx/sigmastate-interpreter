@@ -2,7 +2,7 @@ package sigma.compiler.ir
 
 import debox.{cfor, Buffer => DBuffer}
 import sigma.compiler.ir.core.MutableLazy
-import sigma.ast.{DeserializeContext, SType}
+import sigma.ast.{DeserializeContext, DeserializeRegister, SType}
 import sigma.data.{AVHashMap, Nullable, RType}
 import sigma.data.OverloadHack.Overloaded1
 import sigma.reflection.RConstructor
@@ -209,6 +209,13 @@ abstract class Base { thisIR: IRContext =>
     */
   case class DeserializeContextDef[V <: SType](d: DeserializeContext[V], e: Elem[V#WrappedType]) extends Def[V#WrappedType] {
     override def resultType: Elem[V#WrappedType] = e
+  }
+
+  /**
+   * Def done in order to carry on DeserializeRegister through stages of compilation intact
+   */
+  case class DeserializeRegisterDef[V <: SType](d: DeserializeRegister[V], t: Elem[V#WrappedType], e: Elem[V#WrappedType]) extends Def[V#WrappedType] {
+    override def resultType: Elem[V#WrappedType] = t
   }
 
   /** Base class for virtualized instances of type companions.
