@@ -290,6 +290,25 @@ class BasicOpsSpecification extends CompilerTestingCommons
     )
   }
 
+  property("executeFromSelfReg - CCorner") {
+    val bytes = Slice(ByteArrayConstant(Colls.fromArray(Array.fill(5)(1.toByte))), IntConstant(1), IntConstant(3))
+    val scriptBytes = ValueSerializer.serialize(bytes)
+    
+    val dval = ByteArrayConstant(Colls.fromArray(Array.fill(3)(1.toByte)))
+    val defaultBytes = ValueSerializer.serialize(dval)
+    
+    val customExt = Seq(21.toByte -> ByteArrayConstant(defaultBytes))
+    val customEnv = Map(
+        "defaultVal" -> CAnyValue(21.toByte)
+    )    
+
+    test("executeFromSelfReg", customEnv, customExt,
+      "{val ba = executeFromSelfReg[Coll[Byte]](4, getVar[Coll[Byte]](defaultVal)); ba.size == 2 }",
+      null,
+      true,
+      additionalRegistersOpt = Some(Map())
+    )
+  }
   // end executeFromSelfReg failure tests
 
   property("Relation operations") {
