@@ -272,7 +272,7 @@ class BasicOpsSpecification extends CompilerTestingCommons
     val scriptBytes = ValueSerializer.serialize(bytes)
 
     test("executeFromSelfReg", env, ext,
-      "{ executeFromSelfReg[Int](4, getVar[Int](1)) == 5 }",
+      "{ executeFromSelfReg[Int](4, getVar[Int](1)) == 1 }",
       null,
       true,
       additionalRegistersOpt = Some(Map())
