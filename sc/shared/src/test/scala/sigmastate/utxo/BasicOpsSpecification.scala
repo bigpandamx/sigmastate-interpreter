@@ -268,9 +268,6 @@ class BasicOpsSpecification extends CompilerTestingCommons
   // Coll[Bytes] doesn't and attempts to get the default value but fails
 
   property("executeFromSelfReg - IReduct") {
-    val bytes = Plus(IntConstant(2), IntConstant(3))
-    val scriptBytes = ValueSerializer.serialize(bytes)
-
     test("executeFromSelfReg", env, ext,
       "{ executeFromSelfReg[Int](4, getVar[Int](1)) == 1 }",
       null,
@@ -280,9 +277,6 @@ class BasicOpsSpecification extends CompilerTestingCommons
   }
 
   property("executeFromSelfReg - IThrows") {
-    val bytes = Plus(IntConstant(2), IntConstant(3))
-    val scriptBytes = ValueSerializer.serialize(bytes)
-
     test("executeFromSelfReg", env, ext,
       "{ executeFromSelfReg[Int](4, getVar[Int](1)) == 1 }",
       null,
