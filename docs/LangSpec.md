@@ -1025,7 +1025,10 @@ def deserialize[T](string: String): T
  * type specified.
  * 
  * @param id context variable holding the serialized script to execute
+ * @tparam T expected type of the variable and return type.
  * @return result of the executed script
+ * @throws InvalidType exception when the result type of the execution value is 
+ *                     different from T. 
  */
 def executeFromVar[T](id: Byte): T
 
@@ -1039,9 +1042,13 @@ def executeFromVar[T](id: Byte): T
  * 
  * @param id register id holding the serialized script to execute
  * @param default value that's returned if the register is unavailable
+ * @tparam T expected type of the register and return type.
  * @return result of the executed script or default value
+ * @throws InterpreterException when a script reduces to false
+ * @throws InvalidType exception when the result type of the execution value is 
+ *                     different from T.
  */
-def executeFromReg[T](id: Int, default: Option[T]): T
+def executeFromSelfReg[T](id: Int, default: Option[T]): T
 
 /**
   * Transforms serialized bytes of ErgoTree with segregated constants by
