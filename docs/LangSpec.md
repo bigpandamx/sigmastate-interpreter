@@ -1017,6 +1017,32 @@ def PK(input: String): SigmaProp
   */
 def deserialize[T](string: String): T
 
+/**  
+ *
+ * Extracts, deserializes and executes a script contained in the context variable specified
+ * by id. Returns the result of the script execution in the current context.
+ * Throws an exception if the result type of the execution doesn't conform to the return
+ * type specified.
+ * 
+ * @param id context variable holding the serialized script to execute
+ * @return result of the executed script
+ */
+def executeFromVar[T](id: Byte): T
+
+/**
+ * 
+ * Extracts, deserializes and executes a script contained in the SELF register 
+ * indicated by id. Returns the result of the script execution in the current context
+ * or default value, if the register is unavailable. An exception is thrown if the result 
+ * type of the execution doesn't conform to the return type specified and if an invalid 
+ * register is specified.
+ * 
+ * @param id register id holding the serialized script to execute
+ * @param default value that's returned if the register is unavailable
+ * @return result of the executed script or default value
+ */
+def executeFromReg[T](id: Int, default: Option[T]): T
+
 /**
   * Transforms serialized bytes of ErgoTree with segregated constants by
   * replacing constants at given positions with new values. This operation allow
