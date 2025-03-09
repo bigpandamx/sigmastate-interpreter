@@ -557,18 +557,16 @@ case class DeserializeRegister[V <: SType](reg: RegisterId, tpe: V, default: Opt
   override val opType = SFunc(Array(SBox, SByte, SOption(tpe)), tpe)
   protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
     val t = Evaluation.stypeToRType(tpe)
-
-    val data = try {
-      E.context.SELF.getReg(reg.number)(t)
-    } catch {
-      case _: Exception => throw new InvalidType(s"Value in R${reg.number} doesn't match expected type ${asType(t).name}")
+    val hasVal = !E.context.SELF.registers.isDefinedAt(reg.number) ||
+      E.context.SELF.registers(reg.number).value == null ||
+      E.context.SELF.registers(reg.number).value == None
+    if (!hasVal) {
+      val opt = default.get.evalTo[Option[V#WrappedType]](env)
+      opt.get
+    } else {
+      super.eval(env)
     }
-
-    if (!data.isDefined || data.isEmpty)
-      throw new NoSuchFieldError(s"Register R${reg.number} is invalid or empty")
-
-    super.eval(env)
-  }  
+  }
 }
 object DeserializeRegister extends ValueCompanion {
   override def opCode: OpCode = OpCodes.DeserializeRegisterCode

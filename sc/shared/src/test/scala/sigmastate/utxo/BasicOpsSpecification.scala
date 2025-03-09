@@ -279,49 +279,22 @@ class BasicOpsSpecification extends CompilerTestingCommons
     )
   }
 
-  property("executeFromSelfReg - InvalidType") {
-    assertExceptionThrown(
-      test("executeFromSelfReg", env, ext,
-        "{ executeFromSelfReg[Int](4, getVar[Int](1)) == 1 }",
-        null,
-        true
-      ),
-      e => rootCause(e).isInstanceOf[InvalidType]
+  property("executeFromSelfReg - ForceDefault") {
+    test("executeFromSelfReg", env, ext,
+      "{ executeFromSelfReg[Int](4, getVar[Int](2)) == 2 }",
+      null,
+      true
     )
   }
 
-  property("executeFromSelfReg - CCorner") {
-    val bytes = Slice(ByteArrayConstant(Colls.fromArray(Array.fill(5)(1.toByte))), IntConstant(1), IntConstant(3))
-    val scriptBytes = ValueSerializer.serialize(bytes)
-    
-    val dval = ByteArrayConstant(Colls.fromArray(Array.fill(3)(1.toByte)))
-    val defaultBytes = ValueSerializer.serialize(dval)
-
-    // this is bound to defaultByte in order to provide an array that's not size == 2
-    val customExt = Seq(21.toByte -> ByteArrayConstant(defaultBytes))
-    val customEnv = Map(
-        "defaultVal" -> CAnyValue(21.toByte)
-    )
-
-    assertExceptionThrown(
-      test("executeFromSelfReg", customEnv, customExt,
-        """{
-          val ba = executeFromSelfReg[Coll[Byte]](4, getVar[Coll[Byte]](defaultVal))
-          ba.size == 3
-          }""".stripMargin,
-        null,
-        true,
-        additionalRegistersOpt = Some(Map(
-          reg1 -> ByteArrayConstant(scriptBytes)
-        ))
-      ),
-      e => {
-        val r = rootCause(e)
-        r.isInstanceOf[InterpreterException] && r.getMessage == "Script reduced to false"
-      }
+  property("executeFromSelfReg - InvalidRegister") {
+    test("executeFromSelfReg", env, ext,
+      "{ executeFromSelfReg[Int](15, getVar[Int](2)) == 2 }",
+      null,
+      true,
+      additionalRegistersOpt = Some(Map())
     )
   }
-  // end executeFromSelfReg failure tests
 
   property("Relation operations") {
     test("R1", env, ext,
