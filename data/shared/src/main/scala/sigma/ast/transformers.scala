@@ -4,6 +4,7 @@ import org.ergoplatform.ErgoBox.RegisterId
 import sigma.ast.Operations._
 import sigma.ast.SCollection.SByteArray
 import sigma.ast.syntax.SValue
+import sigma.data.RType.asType
 import sigma.data.{CSigmaProp, RType}
 import sigma.eval.ErgoTreeEvaluator
 import sigma.eval.ErgoTreeEvaluator.DataEnv
@@ -11,6 +12,7 @@ import sigma.serialization.CoreByteWriter.ArgInfo
 import sigma.serialization.OpCodes
 import sigma.serialization.ValueCodes.OpCode
 import sigma.{Box, Coll, Evaluation}
+import sigma.exceptions.InvalidType
 
 // TODO refactor: remove this trait as it doesn't have semantic meaning
 
@@ -553,6 +555,20 @@ object DeserializeContext extends ValueCompanion {
 case class DeserializeRegister[V <: SType](reg: RegisterId, tpe: V, default: Option[Value[V]] = None) extends Deserialize[V] {
   override def companion = DeserializeRegister
   override val opType = SFunc(Array(SBox, SByte, SOption(tpe)), tpe)
+  protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
+    val t = Evaluation.stypeToRType(tpe)
+
+    val data = try {
+      E.context.SELF.getReg(reg.number)(t)
+    } catch {
+      case _: Exception => throw new InvalidType(s"Value in R${reg.number} doesn't match expected type ${asType(t).name}")
+    }
+
+    if (!data.isDefined || data.isEmpty)
+      throw new NoSuchFieldError(s"Register R${reg.number} is invalid or empty")
+
+    super.eval(env)
+  }  
 }
 object DeserializeRegister extends ValueCompanion {
   override def opCode: OpCode = OpCodes.DeserializeRegisterCode

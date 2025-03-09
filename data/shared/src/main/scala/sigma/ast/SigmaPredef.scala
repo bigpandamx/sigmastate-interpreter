@@ -394,10 +394,7 @@ object SigmaPredef {
         { 
         case (Ident(_, SFunc(_, rtpe, _)), Seq(id: Constant[SNumericType]@unchecked, default)) =>
           val r: RegisterId = org.ergoplatform.ErgoBox.registerByIndex(SByte.downcast(id.value.asInstanceOf[AnyVal]))
-          mkDeserializeRegister(
-            r, rtpe,
-            Some(default.asValue[rtpe.type])
-          )
+          mkDeserializeRegister[rtpe.type](r, rtpe, Some(default.asValue[rtpe.type]))
         }),
       OperationInfo(DeserializeRegister,
         """Extracts SELF register as \lst{Coll[Byte]}, deserializes it to script
