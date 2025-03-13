@@ -267,7 +267,7 @@ class BasicOpsSpecification extends CompilerTestingCommons
   property("executeFromSelfReg - ScriptReduction") {
     assertExceptionThrown(
       test("executeFromSelfReg", env, ext,
-        "{ executeFromSelfReg[Int](4, getVar[Int](1)) == 1 }",
+        "{ executeFromSelfReg[Int](4, getVar[Int](1)) == 2 }",
         null,
         true,
         additionalRegistersOpt = Some(Map())
@@ -276,6 +276,15 @@ class BasicOpsSpecification extends CompilerTestingCommons
         val r = rootCause(e)
         r.isInstanceOf[InterpreterException] && r.getMessage == "Script reduced to false"
       }
+    )
+  }
+
+  property("executeFromSelfReg - ForceDefault") {
+    test("executeFromSelfReg", env, ext,
+      "{ executeFromSelfReg[Int](4, getVar[Int](2)) == 2 }",
+      null,
+      true,
+      additionalRegistersOpt = Some(Map())
     )
   }
 

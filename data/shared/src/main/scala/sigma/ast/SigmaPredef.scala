@@ -396,8 +396,15 @@ object SigmaPredef {
           if (idx < 0 || idx >= org.ergoplatform.ErgoBox.allRegisters.length) {
             default.v.asOption[rtpe.type].get
           } else {
+            val defVal = Some(default.tpe match {
+              case _: SOption[rtpe.type] =>
+                default.v.asOption[rtpe.type].get
+              case _ =>
+                default.asValue[rtpe.type]
+            })
+
             val r: RegisterId = org.ergoplatform.ErgoBox.registerByIndex(idx)
-            mkDeserializeRegister[rtpe.type](r, rtpe, Some(default.asValue[rtpe.type]))
+            mkDeserializeRegister[rtpe.type](r, rtpe, defVal)
           }
         }),
       OperationInfo(DeserializeRegister,
