@@ -555,18 +555,6 @@ object DeserializeContext extends ValueCompanion {
 case class DeserializeRegister[V <: SType](reg: RegisterId, tpe: V, default: Option[Value[V]] = None) extends Deserialize[V] {
   override def companion = DeserializeRegister
   override val opType = SFunc(Array(SBox, SByte, SOption(tpe)), tpe)
-  protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
-    val t = Evaluation.stypeToRType(tpe)
-    val hasVal = !E.context.SELF.registers.isDefinedAt(reg.number) ||
-      E.context.SELF.registers(reg.number).value == null ||
-      E.context.SELF.registers(reg.number).value == None
-    if (!hasVal) {
-      val opt = default.get.evalTo[Option[V#WrappedType]](env)
-      opt.get
-    } else {
-      super.eval(env)
-    }
-  }
 }
 object DeserializeRegister extends ValueCompanion {
   override def opCode: OpCode = OpCodes.DeserializeRegisterCode

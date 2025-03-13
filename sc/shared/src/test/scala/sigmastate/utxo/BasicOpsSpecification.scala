@@ -279,17 +279,9 @@ class BasicOpsSpecification extends CompilerTestingCommons
     )
   }
 
-  property("executeFromSelfReg - ForceDefault") {
-    test("executeFromSelfReg", env, ext,
-      "{ executeFromSelfReg[Int](4, getVar[Int](2)) == 2 }",
-      null,
-      true
-    )
-  }
-
   property("executeFromSelfReg - InvalidRegister") {
     test("executeFromSelfReg", env, ext,
-      "{ executeFromSelfReg[Int](15, getVar[Int](2)) == 2 }",
+      "{ executeFromSelfReg[Int](99, getVar[Int](2)) == 2 }",
       null,
       true,
       additionalRegistersOpt = Some(Map())
