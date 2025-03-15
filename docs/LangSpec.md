@@ -1041,7 +1041,7 @@ def executeFromVar[T](id: Byte): T
  * register is specified.
  * 
  * @param id register id holding the serialized script to execute
- * @param default value that's returned if the register is unavailable
+ * @param default value returned if the register is unavailable
  * @tparam T expected type of the register and return type.
  * @return result of the executed script or default value
  * @throws InterpreterException when a script reduces to false

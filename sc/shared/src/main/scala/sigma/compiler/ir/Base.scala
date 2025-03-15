@@ -214,8 +214,8 @@ abstract class Base { thisIR: IRContext =>
   /**
    * Def done in order to carry on DeserializeRegister through stages of compilation intact
    */
-  case class DeserializeRegisterDef[V <: SType](d: DeserializeRegister[V], t: Elem[V#WrappedType], e: Elem[V#WrappedType]) extends Def[V#WrappedType] {
-    override def resultType: Elem[V#WrappedType] = t
+  case class DeserializeRegisterDef[V <: SType](d: DeserializeRegister[V], e: Elem[V#WrappedType]) extends Def[V#WrappedType] {
+    override def resultType: Elem[V#WrappedType] = e
   }
 
   /** Base class for virtualized instances of type companions.

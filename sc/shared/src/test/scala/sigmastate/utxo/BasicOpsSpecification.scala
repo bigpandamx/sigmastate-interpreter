@@ -1,6 +1,6 @@
 package sigmastate.utxo
 
-import org.ergoplatform.ErgoBox.{AdditionalRegisters, R4, R6, R8}
+import org.ergoplatform.ErgoBox.{AdditionalRegisters, R6, R8}
 import org.ergoplatform._
 import sigma.Colls
 import sigma.Extensions.ArrayOps

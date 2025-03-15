@@ -556,7 +556,7 @@ trait GraphBuilding extends Base with DefRewriting { IR: IRContext =>
 
       case d: DeserializeRegister[T] =>
         val e = stypeToElem(d.tpe)
-        DeserializeRegisterDef[T](d, e, e)
+        DeserializeRegisterDef[T](d, e)
 
       case ValUse(valId, _) =>
         env.getOrElse(valId, !!!(s"ValUse $valId not found in environment $env"))
