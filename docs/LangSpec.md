@@ -1048,7 +1048,7 @@ def executeFromVar[T](id: Byte): T
  * @throws InvalidType exception when the result type of the execution value is 
  *                     different from T.
  */
-def executeFromSelfReg[T](id: Int, default: Option[T]): T
+def executeFromSelfReg[T](id: Int, default: T): T
 
 /**
   * Transforms serialized bytes of ErgoTree with segregated constants by
