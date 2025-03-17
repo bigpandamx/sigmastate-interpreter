@@ -571,6 +571,10 @@ trait GraphBuilding extends Base with DefRewriting { IR: IRContext =>
         val e = stypeToElem(optTpe.elemType)
         ctx.getVar(id)(e)
 
+      case d: DeserializeContext[T] =>
+        val e = stypeToElem(d.tpe)
+        DeserializeContextDef(d, e)
+
       case ValUse(valId, _) =>
         env.getOrElse(valId, !!!(s"ValUse $valId not found in environment $env"))
 
@@ -1009,8 +1013,6 @@ trait GraphBuilding extends Base with DefRewriting { IR: IRContext =>
               xs.getOrElse(i, d)
             case SCollectionMethods.ReverseMethod.name =>
               xs.reverse
-            case SCollectionMethods.DistinctMethod.name =>
-              xs.distinct
             case SCollectionMethods.StartsWithMethod.name =>
               val ys = asRep[Coll[t]](argsV(0))
               xs.startsWith(ys)

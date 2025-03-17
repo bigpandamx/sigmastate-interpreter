@@ -1488,27 +1488,6 @@ class BasicOpsSpecification extends CompilerTestingCommons
     }
   }
 
-  property("Coll.distinct"){
-    def reverseTest() = test("distinct", env, ext,
-      """{
-        | val c1 = Coll(1, 2, 3, 3, 2)
-        | val c2 = Coll(3, 2, 1)
-        |
-        | val h1 = Coll(INPUTS(0), INPUTS(0))
-        | val h2 = Coll(INPUTS(0))
-        |
-        | c1.distinct.reverse == c2 && h1.distinct == h2
-        | }""".stripMargin,
-      null
-    )
-
-    if(VersionContext.current.isV3OrLaterErgoTreeVersion) {
-      reverseTest()
-    } else {
-      an[sigma.validation.ValidationException] shouldBe thrownBy(reverseTest())
-    }
-  }
-
   property("Coll.startsWith"){
     def reverseTest() = test("distinct", env, ext,
       """{
@@ -2437,6 +2416,50 @@ class BasicOpsSpecification extends CompilerTestingCommons
     }
   }
 
+  property("executeFromVar - SigmaProp") {
+    val script = GT(Height, IntConstant(-1)).toSigmaProp
+    val scriptBytes = ValueSerializer.serialize(script)
+    val customExt = Seq(21.toByte -> ByteArrayConstant(scriptBytes))
+    test("executeFromVar", env, customExt,
+      "executeFromVar[SigmaProp](21)",
+      null,
+      true
+    )
+  }
+
+  property("executeFromVar - Int") {
+    val valueBytes = ValueSerializer.serialize(Plus(IntConstant(2), IntConstant(3)))
+    val customExt = Seq(21.toByte -> ByteArrayConstant(valueBytes))
+    test("executeFromVar", env, customExt,
+      "{ executeFromVar[Int](21) == 5 }",
+      null,
+      true
+    )
+  }
+
+  property("executeFromVar - Coll[Byte]") {
+    val bytes = Slice(ByteArrayConstant(Colls.fromArray(Array.fill(5)(1.toByte))), IntConstant(1), IntConstant(3))
+    val valueBytes = ValueSerializer.serialize(bytes)
+    val customExt = Seq(21.toByte -> ByteArrayConstant(valueBytes))
+    test("executeFromVar", env, customExt,
+      "{val ba = executeFromVar[Coll[Byte]](21); ba.size == 2 }",
+      null,
+      true
+    )
+  }
+
+  // test which is showing impossibility of nested Deserialize*
+  property("executeFromVar - deserialize") {
+    val script = DeserializeContext(21.toByte, SSigmaProp)
+    val scriptBytes = ValueSerializer.serialize(script)
+    val customExt = Seq(21.toByte -> ByteArrayConstant(scriptBytes))
+    an [Exception] should be thrownBy test("executeFromVar", env, customExt,
+      "executeFromVar[SigmaProp](21)",
+      null,
+      true
+    )
+  }
+
   property("Relation operations") {
     test("R1", env, ext,
       "{ allOf(Coll(getVar[Boolean](trueVar).get, true, true)) }",
@@ -3089,7 +3112,7 @@ class BasicOpsSpecification extends CompilerTestingCommons
     if (VersionContext.current.isV3OrLaterErgoTreeVersion) {
       getRegTest()
     } else {
-      an[sigma.exceptions.ConstraintFailed] should be thrownBy getRegTest()
+      an[sigma.validation.ValidationException] should be thrownBy getRegTest()
     }
   }
 
@@ -3110,7 +3133,7 @@ class BasicOpsSpecification extends CompilerTestingCommons
     if (VersionContext.current.isV3OrLaterErgoTreeVersion) {
       getRegTest()
     } else {
-      an[java.nio.BufferUnderflowException] should be thrownBy getRegTest()
+      an[sigma.validation.ValidationException] should be thrownBy getRegTest()
     }
   }
 

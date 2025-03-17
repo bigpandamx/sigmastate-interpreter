@@ -33,7 +33,7 @@ object ReflectionData {
     */
   def registerClassEntry[T](clazz: Class[T],
                             constructors: Seq[SRConstructor[_]] = ArraySeq.empty,
-                            fields: Map[String, SRField] = Map.empty,
+                            fields: Map[String, RField] = Map.empty,
                             methods: Map[(String, Seq[Class[_]]), RMethod] = Map.empty): Unit = classes.synchronized {
     classes.put(clazz, new SRClass(clazz, constructors, fields, methods))
   }
@@ -232,9 +232,6 @@ object ReflectionData {
         },
         mkMethod(clazz, "reverse", Array[Class[_]]()) { (obj, args) =>
           obj.asInstanceOf[Coll[Any]].reverse
-        },
-        mkMethod(clazz, "distinct", Array[Class[_]]()) { (obj, args) =>
-          obj.asInstanceOf[Coll[Any]].distinct
         },
         mkMethod(clazz, "startsWith", Array[Class[_]](classOf[Coll[_]])) { (obj, args) =>
           obj.asInstanceOf[Coll[Any]].startsWith(args(0).asInstanceOf[Coll[Any]])
