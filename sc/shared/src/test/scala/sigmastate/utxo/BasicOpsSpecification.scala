@@ -6,7 +6,6 @@ import sigma.Colls
 import sigma.Extensions.ArrayOps
 import sigma.ast.SCollection.SByteArray
 import sigma.ast.SOption
-import sigma.ast.SOption.{OptionTypeConstrId, SIntOption}
 import sigma.ast.SType.AnyOps
 import sigma.data.{AvlTreeData, CAnyValue, CSigmaDslBuilder}
 import sigma.util.StringUtil._

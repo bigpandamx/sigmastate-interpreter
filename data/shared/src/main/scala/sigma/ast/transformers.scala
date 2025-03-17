@@ -4,7 +4,6 @@ import org.ergoplatform.ErgoBox.RegisterId
 import sigma.ast.Operations._
 import sigma.ast.SCollection.SByteArray
 import sigma.ast.syntax.SValue
-import sigma.data.RType.asType
 import sigma.data.{CSigmaProp, RType}
 import sigma.eval.ErgoTreeEvaluator
 import sigma.eval.ErgoTreeEvaluator.DataEnv
@@ -12,7 +11,6 @@ import sigma.serialization.CoreByteWriter.ArgInfo
 import sigma.serialization.OpCodes
 import sigma.serialization.ValueCodes.OpCode
 import sigma.{Box, Coll, Evaluation}
-import sigma.exceptions.InvalidType
 
 // TODO refactor: remove this trait as it doesn't have semantic meaning
 
