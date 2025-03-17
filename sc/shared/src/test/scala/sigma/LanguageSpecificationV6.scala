@@ -1474,12 +1474,12 @@ class LanguageSpecificationV6 extends LanguageSpecificationBase { suite =>
   }
 
   property("Global.powHit") {
-    def powHit: Feature[Coll[Byte], sigma.BigInt] = newFeature(
+    def powHit: Feature[Coll[Byte], sigma.UnsignedBigInt] = newFeature(
       { (x: Coll[Byte]) =>
         val msg = x.slice(0, 7).toArray
         val nonce = x.slice(7, 15).toArray
         val h = x.slice(15, 19).toArray
-        CBigInt(Autolykos2PowValidation.hitForVersion2ForMessageWithChecks(32, msg, nonce, h, 1024 * 1024).bigInteger)
+        CUnsignedBigInt(Autolykos2PowValidation.hitForVersion2ForMessageWithChecks(32, msg, nonce, h, 1024 * 1024).bigInteger)
       },
       "{ (x: Coll[Byte]) => val msg = x.slice(0,7); val nonce = x.slice(7,15); val h = x.slice(15,19); " +
         "Global.powHit(32, msg, nonce, h, 1024 * 1024) }",
@@ -1505,7 +1505,7 @@ class LanguageSpecificationV6 extends LanguageSpecificationBase { suite =>
     val nonce = Base16.decode("000000000000002c").get
     val h = Base16.decode("00000000").get
     val x = Colls.fromArray(msg ++ nonce ++ h)
-    val hit = CBigInt(new BigInteger("326674862673836209462483453386286740270338859283019276168539876024851191344"))
+    val hit = CUnsignedBigInt(new BigInteger("326674862673836209462483453386286740270338859283019276168539876024851191344"))
 
     verifyCases(
       Seq(
@@ -2186,35 +2186,6 @@ class LanguageSpecificationV6 extends LanguageSpecificationBase { suite =>
     verifyCases(
       Seq(
         Coll(1, 2) -> Expected(ExpectedResult(Success(Coll(2, 1)), None)),
-        Coll[Int]() -> Expected(ExpectedResult(Success(Coll[Int]()), None))
-      ),
-      f
-    )
-  }
-
-  property("Coll.distinct") {
-    val f = newFeature[Coll[Int], Coll[Int]](
-      { (xs: Coll[Int]) => xs.distinct },
-      """{(xs: Coll[Int]) => xs.distinct }""".stripMargin,
-      FuncValue(
-        Array((1, SCollectionType(SInt))),
-        MethodCall.typed[Value[SCollection[SInt.type]]](
-          ValUse(1, SCollectionType(SInt)),
-          SCollectionMethods.DistinctMethod.withConcreteTypes(Map(STypeVar("IV") -> SInt)),
-          IndexedSeq(),
-          Map()
-        )
-      ),
-      sinceVersion = VersionContext.V6SoftForkVersion
-    )
-
-    verifyCases(
-      Seq(
-        Coll(1, 2) -> Expected(ExpectedResult(Success(Coll(1, 2)), None)),
-        Coll(1, 1, 2) -> Expected(ExpectedResult(Success(Coll(1, 2)), None)),
-        Coll(1, 2, 2) -> Expected(ExpectedResult(Success(Coll(1, 2)), None)),
-        Coll(2, 2, 2) -> Expected(ExpectedResult(Success(Coll(2)), None)),
-        Coll(3, 1, 2, 2, 2, 4, 4, 1) -> Expected(ExpectedResult(Success(Coll(3, 1, 2, 4)), None)),
         Coll[Int]() -> Expected(ExpectedResult(Success(Coll[Int]()), None))
       ),
       f
