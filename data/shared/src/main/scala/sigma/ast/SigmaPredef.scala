@@ -4,11 +4,16 @@ import org.ergoplatform.ErgoAddressEncoder.NetworkPrefix
 import org.ergoplatform.{ErgoAddressEncoder, P2PKAddress}
 import org.ergoplatform.ErgoBox.RegisterId
 import scorex.util.encode.{Base16, Base58, Base64}
+import sigma.data._
+import sigma.{Colls}
 import sigma.ast.SCollection.{SByteArray, SIntArray}
 import sigma.ast.SOption.SIntOption
 import sigma.ast.SigmaPropConstant
 import sigma.ast.syntax._
 import sigma.data.Nullable
+import sigma.data.RType.asType
+import sigma.Evaluation.stypeToRType
+import scala.reflect.ClassTag
 import sigma.exceptions.InvalidArguments
 import sigma.serialization.CoreByteWriter.ArgInfo
 import sigma.serialization.ValueSerializer
@@ -384,7 +389,7 @@ object SigmaPredef {
         Seq(ArgInfo("id", "identifier of the context variable")))
     )
 
-    val ExecuteFromSelfRegFunc = PredefinedFunc("executeFromSelfReg",
+    val ExecuteFromSelfRegWithDefaultFunc = PredefinedFunc("executeFromSelfRegWithDefault",
       Lambda(
         Seq(paramT),
         Array("id" -> SInt, "default" -> tT),
@@ -408,6 +413,50 @@ object SigmaPredef {
          | Type parameter \lst{T} result type of the deserialized script.
          | Throws an exception if the actual script type doesn't conform to \lst{T}.
          | Returns a result of the script execution in the current context
+        """.stripMargin,
+        Seq(ArgInfo("id", "identifier of the register"),
+          ArgInfo("default", "optional default value, if register is not available")))
+    )
+
+    val ExecuteFromSelfRegFunc = PredefinedFunc("executeFromSelfReg",
+      Lambda(
+        Seq(paramT),
+        Array("id" -> SInt),
+        tT, None
+      ),
+      PredefFuncInfo(
+        { case (Ident(_, SFunc(_, rtpe, _)), Seq(id: Constant[SNumericType]@unchecked)) =>
+          val idx: Int = SInt.downcast((id.value.asInstanceOf[AnyVal]))
+          if (idx < 0 || idx >= org.ergoplatform.ErgoBox.allRegisters.length) {
+            throw new InvalidArguments(s"Invalid register specified $id")
+          }
+
+          val d : Option[Value[rtpe.type]] = rtpe match {
+            case SInt       => Some(IntConstant(0).asValue)
+            case SBoolean   =>
+              //.withSrcCtx(currentSrcCtx.value).asInstanceOf[Constant[T]]
+                Some(BooleanConstant(false).withSrcCtx(currentSrcCtx.value))
+            case SByte      => Some(ByteConstant(0).asValue)
+            case SLong      => Some(LongConstant(0L).asValue)
+            case SBigInt    => Some(BigIntConstant(0).asValue)
+            case SSigmaProp => Some(SigmaPropConstant(CSigmaProp(false)).asValue)
+            case c: SCollection[a] =>
+              implicit val elemRType: RType[a#WrappedType] = asType(stypeToRType(c.elemType))
+              implicit val elemCT: ClassTag[a#WrappedType] = elemRType.classTag
+              Some(CollectionConstant(Colls.fromArray(elemRType.emptyArray), c.elemType).asValue)
+            case _ => None
+          }
+
+          val r: RegisterId = org.ergoplatform.ErgoBox.registerByIndex(idx)
+          mkDeserializeRegister[rtpe.type](r, rtpe, d)
+        }),
+      OperationInfo(DeserializeRegister,
+        """Extracts SELF register as \lst{Coll[Byte]}, deserializes it to script
+          | and then executes this script in the current context.
+          | The original \lst{Coll[Byte]} of the script is available as \lst{SELF.getReg[Coll[Byte]](id)}.
+          | Type parameter \lst{T} result type of the deserialized script.
+          | Throws an exception if the actual script type doesn't conform to \lst{T}.
+          | Returns a result of the script execution in the current context
         """.stripMargin,
         Seq(ArgInfo("id", "identifier of the register"),
           ArgInfo("default", "optional default value, if register is not available")))
@@ -440,6 +489,7 @@ object SigmaPredef {
       AvlTreeFunc,
       SubstConstantsFunc,
       ExecuteFromVarFunc,
+      ExecuteFromSelfRegWithDefaultFunc,
       ExecuteFromSelfRegFunc
     ).map(f => f.name -> f).toMap
 

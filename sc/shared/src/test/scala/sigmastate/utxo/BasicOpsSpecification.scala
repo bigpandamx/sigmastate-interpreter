@@ -204,7 +204,7 @@ class BasicOpsSpecification extends CompilerTestingCommons
     )
   }
 
-  property("executeFromSelfReg - SigmaProp") {
+  property("executeFromSelfRegWithDefault - SigmaProp") {
     val script = GT(Height, IntConstant(-1)).toSigmaProp
     val scriptBytes = ValueSerializer.serialize(script)
 
@@ -217,7 +217,99 @@ class BasicOpsSpecification extends CompilerTestingCommons
     )
 
     test("executeFromSelfReg", customEnv, customExt,
-      "executeFromSelfReg[SigmaProp](4, getVar[SigmaProp](defaultVal).get)",
+      "executeFromSelfRegWithDefault[SigmaProp](4, getVar[SigmaProp](defaultVal).get)",
+      null,
+      true,
+      additionalRegistersOpt = Some(Map(
+        reg1 -> ByteArrayConstant(scriptBytes)
+      ))
+    )
+  }
+
+  property("executeFromSelfRegWithDefault - Coll[Byte]") {
+    val bytes = Slice(ByteArrayConstant(Colls.fromArray(Array.fill(5)(1.toByte))), IntConstant(1), IntConstant(3))
+    val scriptBytes = ValueSerializer.serialize(bytes)
+
+    // this is bound to defaultByte in order to provide an array that's not size == 2
+    val dval = ByteArrayConstant(Colls.fromArray(Array.fill(3)(1.toByte)))
+    val defaultBytes = ValueSerializer.serialize(dval)
+
+    val customExt = Seq(21.toByte -> ByteArrayConstant(defaultBytes))
+    val customEnv = Map(
+        "defaultVal" -> CAnyValue(21.toByte)
+    )    
+
+    test("executeFromSelfReg", customEnv, customExt,
+      "{val ba = executeFromSelfRegWithDefault[Coll[Byte]](4, getVar[Coll[Byte]](defaultVal).get); ba.size == 2 }",
+      null,
+      true,
+      additionalRegistersOpt = Some(Map(
+        reg1 -> ByteArrayConstant(scriptBytes)
+      ))
+    )
+  }
+
+  property("executeFromSelfRegWithDefault - Int") {
+    val bytes = Plus(IntConstant(2), IntConstant(3))
+    val scriptBytes = ValueSerializer.serialize(bytes)
+
+    test("executeFromSelfReg", env, ext,
+      "{ executeFromSelfRegWithDefault[Int](4, getVar[Int](1).get) == 5 }",
+      null,
+      true,
+      additionalRegistersOpt = Some(Map(
+        reg1 -> ByteArrayConstant(scriptBytes)
+      ))
+    )
+  }
+
+  property("executeFromSelfRegWithDefault - ScriptReduction") {
+    assertExceptionThrown(
+      test("executeFromSelfReg", env, ext,
+        "{ executeFromSelfRegWithDefault[Int](4, getVar[Int](1).get) == 2 }",
+        null,
+        true,
+        additionalRegistersOpt = Some(Map())
+      ),
+      e => {
+        val r = rootCause(e)
+        r.isInstanceOf[InterpreterException] && r.getMessage == "Script reduced to false"
+      }
+    )
+  }
+
+  property("executeFromSelfRegWithDefault - ForceDefault") {
+    test("executeFromSelfReg", env, ext,
+      "{ executeFromSelfRegWithDefault[Int](4, getVar[Int](2).get) == 2 }",
+      null,
+      true,
+      additionalRegistersOpt = Some(Map())
+    )
+  }
+
+  property("executeFromSelfRegWithDefault - InvalidRegister") {
+    test("executeFromSelfReg", env, ext,
+      "{ executeFromSelfRegWithDefault[Int](99, getVar[Int](2).get) == 2 }",
+      null,
+      true,
+      additionalRegistersOpt = Some(Map())
+    )
+  }
+
+  property("executeFromSelfReg - SigmaProp") {
+    val script = GT(Height, IntConstant(-1)).toSigmaProp
+    val scriptBytes = ValueSerializer.serialize(script)
+
+    val defScript = EQ(Plus(IntConstant(1), IntConstant(5)), 7).toSigmaProp
+    val defBytes = ValueSerializer.serialize(defScript)
+
+    val customExt = Seq(21.toByte -> ByteArrayConstant(defBytes))
+    val customEnv = Map(
+      "defaultVal" -> CAnyValue(21.toByte)
+    )
+
+    test("executeFromSelfReg", customEnv, customExt,
+      "executeFromSelfReg[SigmaProp](4)",
       null,
       true,
       additionalRegistersOpt = Some(Map(
@@ -236,11 +328,11 @@ class BasicOpsSpecification extends CompilerTestingCommons
 
     val customExt = Seq(21.toByte -> ByteArrayConstant(defaultBytes))
     val customEnv = Map(
-        "defaultVal" -> CAnyValue(21.toByte)
-    )    
+      "defaultVal" -> CAnyValue(21.toByte)
+    )
 
     test("executeFromSelfReg", customEnv, customExt,
-      "{val ba = executeFromSelfReg[Coll[Byte]](4, getVar[Coll[Byte]](defaultVal).get); ba.size == 2 }",
+      "{val ba = executeFromSelfReg[Coll[Byte]](4); ba.size == 2 }",
       null,
       true,
       additionalRegistersOpt = Some(Map(
@@ -254,7 +346,7 @@ class BasicOpsSpecification extends CompilerTestingCommons
     val scriptBytes = ValueSerializer.serialize(bytes)
 
     test("executeFromSelfReg", env, ext,
-      "{ executeFromSelfReg[Int](4, getVar[Int](1).get) == 5 }",
+      "{ executeFromSelfReg[Int](4) == 5 }",
       null,
       true,
       additionalRegistersOpt = Some(Map(
@@ -266,7 +358,7 @@ class BasicOpsSpecification extends CompilerTestingCommons
   property("executeFromSelfReg - ScriptReduction") {
     assertExceptionThrown(
       test("executeFromSelfReg", env, ext,
-        "{ executeFromSelfReg[Int](4, getVar[Int](1).get) == 2 }",
+        "{ val ba = executeFromSelfReg[Coll[Byte]](4); ba.size == 2 }",
         null,
         true,
         additionalRegistersOpt = Some(Map())
@@ -280,7 +372,7 @@ class BasicOpsSpecification extends CompilerTestingCommons
 
   property("executeFromSelfReg - ForceDefault") {
     test("executeFromSelfReg", env, ext,
-      "{ executeFromSelfReg[Int](4, getVar[Int](2).get) == 2 }",
+      "{ executeFromSelfReg[Int](4) == 0 }",
       null,
       true,
       additionalRegistersOpt = Some(Map())
@@ -288,11 +380,17 @@ class BasicOpsSpecification extends CompilerTestingCommons
   }
 
   property("executeFromSelfReg - InvalidRegister") {
-    test("executeFromSelfReg", env, ext,
-      "{ executeFromSelfReg[Int](99, getVar[Int](2).get) == 2 }",
-      null,
-      true,
-      additionalRegistersOpt = Some(Map())
+    assertExceptionThrown(
+      test("executeFromSelfReg", env, ext,
+        "{ executeFromSelfReg[Int](99) == 2 }",
+        null,
+        true,
+        additionalRegistersOpt = Some(Map())
+      ),
+      e => {
+        val r = rootCause(e)
+        r.isInstanceOf[sigma.exceptions.InvalidArguments] && r.getMessage.startsWith("Invalid register specified")
+      }
     )
   }
 

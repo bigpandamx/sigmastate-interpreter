@@ -563,11 +563,11 @@ class SigmaTyperTest extends AnyPropSpec
     typecheck(env, "executeFromVar[Boolean](1)") shouldBe SBoolean
   }
 
-  property("executeFromSelfReg") {
-    typecheck(env, "executeFromSelfReg[Boolean](4, getVar[Boolean](1).get)") shouldBe SBoolean
+  property("executeFromSelfRegWithDefault") {
+    typecheck(env, "executeFromSelfRegWithDefault[Boolean](4, getVar[Boolean](1).get)") shouldBe SBoolean
 
     an[TyperException] should be thrownBy {
-      typecheck(env, "executeFromSelfReg[Boolean](4, getVar[Int](1).get)")
+      typecheck(env, "executeFromSelfRegWithDefault[Boolean](4, getVar[Int](1).get)")
     }
   }
 

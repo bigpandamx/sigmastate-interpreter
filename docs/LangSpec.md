@@ -1036,6 +1036,23 @@ def executeFromVar[T](id: Byte): T
  * 
  * Extracts, deserializes and executes a script contained in the SELF register 
  * indicated by id. Returns the result of the script execution in the current context
+ * or and empty value, if the register is unavailable. An exception is thrown if the result 
+ * type of the execution doesn't conform to the return type specified and if an invalid 
+ * register is specified.
+ * 
+ * @param id register id holding the serialized script to execute
+ * @tparam T expected type of the register and return type.
+ * @return result of the executed script or default value
+ * @throws InterpreterException when a script reduces to false
+ * @throws InvalidType exception when the result type of the execution value is 
+ *                     different from T.
+ */
+def executeFromSelfReg[T](id: Int): T
+
+/**
+ * 
+ * Extracts, deserializes and executes a script contained in the SELF register 
+ * indicated by id. Returns the result of the script execution in the current context
  * or default value, if the register is unavailable. An exception is thrown if the result 
  * type of the execution doesn't conform to the return type specified and if an invalid 
  * register is specified.
@@ -1048,7 +1065,7 @@ def executeFromVar[T](id: Byte): T
  * @throws InvalidType exception when the result type of the execution value is 
  *                     different from T.
  */
-def executeFromSelfReg[T](id: Int, default: T): T
+def executeFromSelfRegWithDefault[T](id: Int, default: T): T
 
 /**
   * Transforms serialized bytes of ErgoTree with segregated constants by
