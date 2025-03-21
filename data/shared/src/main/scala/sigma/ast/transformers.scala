@@ -259,7 +259,7 @@ case class ByIndex[V <: SType](input: Value[SCollection[V]],
     default match {
       case Some(d) =>
         if (VersionContext.current.isV3OrLaterErgoTreeVersion) {
-          // lazy evaluation of default in 6.0
+          // lazy evaluation of default in ErgoTree v3 or later
           addCost(ByIndex.costKind)
           if (inputV.isDefinedAt(indexV)) {
             inputV.apply(indexV)

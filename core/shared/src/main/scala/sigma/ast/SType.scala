@@ -121,11 +121,21 @@ object SType {
     }
   }
 
+  private val v5Types = Seq(
+    SBoolean, SString, STuple, SGroupElement, SSigmaProp, SContext, SGlobal, SHeader, SPreHeader,
+    SAvlTree, SBox, SOption, SCollection, SBigInt
+  )
+  private val v6Types = v5Types ++ Seq(SByte, SShort, SInt, SLong, SUnsignedBigInt)
+
+  private val v5TypesMap = v5Types.map { t => (t.typeId, t) }.toMap
+
+  private val v6TypesMap = v6Types.map { t => (t.typeId, t) }.toMap
+
   /** A mapping of object types supporting MethodCall operations. For each serialized
     * typeId this map contains a companion object which can be used to access the list of
     * corresponding methods.
     *
-    * @note starting from v6.0 methods with type parameters are also supported.
+    * @note starting from v6.0 ErgoTrees methods with type parameters are also supported.
     *
     * @note on versioning:
     * In v3.x-5.x SNumericType.typeId is silently shadowed by SGlobal.typeId as part of
@@ -140,7 +150,7 @@ object SType {
     * via lowering to Downcast, Upcast opcodes and the remaining `toBytes`, `toBits`
     * methods are not implemented at all.
     *
-    * Starting from v6.0 the SNumericType.typeId is demoted as a receiver object of
+    * Starting from v6.0 ErgoTrees the SNumericType.typeId is demoted as a receiver object of
     * method calls and:
     * 1) numeric type SByte, SShort, SInt, SLong are promoted as receivers and added to
     * the _types map.
@@ -148,22 +158,12 @@ object SType {
     * (SByte, SShort, SInt, SLong, SBigInt) and the generic tNum type parameter is
     * specialized accordingly.
     *
-    * Also, SUnsignedBigInt type is added in v6.0.
+    * Also, SUnsignedBigInt type is added in v6.0 ErgoTree.
     *
     * This difference in behaviour is tested by `property("MethodCall on numerics")`.
     *
     * The regression tests in `property("MethodCall Codes")` should pass.
     */
-  private val v5Types = Seq(
-    SBoolean, SString, STuple, SGroupElement, SSigmaProp, SContext, SGlobal, SHeader, SPreHeader,
-    SAvlTree, SBox, SOption, SCollection, SBigInt
-  )
-  private val v6Types = v5Types ++ Seq(SByte, SShort, SInt, SLong, SUnsignedBigInt)
-
-  private val v5TypesMap = v5Types.map { t => (t.typeId, t) }.toMap
-
-  private val v6TypesMap = v6Types.map { t => (t.typeId, t) }.toMap
-
   def types: Map[Byte, STypeCompanion] = if (VersionContext.current.isV3OrLaterErgoTreeVersion) {
     v6TypesMap
   } else {
