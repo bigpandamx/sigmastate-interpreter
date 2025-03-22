@@ -10,6 +10,3 @@ class SigmaException(
   val message: String,
   val cause: Option[Throwable] = None
 ) extends Exception(message, cause.orNull)
-
-
-
