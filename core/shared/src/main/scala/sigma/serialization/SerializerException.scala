@@ -2,8 +2,6 @@ package sigma.serialization
 
 import sigma.SigmaException
 
-import scala.collection.compat.immutable.ArraySeq
-
 /** Exception thrown during serialization.
   *
   * @param message the error message
@@ -11,10 +9,8 @@ import scala.collection.compat.immutable.ArraySeq
   */
 case class SerializerException(
     override val message: String,
-    override val cause: Option[Throwable] = None,
-    override val args: Seq[Any] = ArraySeq.empty
-)
-    extends SigmaException(message, cause, args)
+    override val cause: Option[Throwable] = None
+) extends SigmaException(message, cause)
 
 /** Thrown by TypeSerializer when type prefix <= 0. */
 final class InvalidTypePrefix(message: String, cause: Option[Throwable] = None)
