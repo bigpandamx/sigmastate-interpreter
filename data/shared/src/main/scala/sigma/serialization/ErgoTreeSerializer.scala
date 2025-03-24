@@ -104,6 +104,8 @@ class ErgoTreeSerializer {
     * structure after deserialization. */
   def serializeErgoTree(ergoTree: ErgoTree): Array[Byte] = {
     val treeVersion = ergoTree.version
+    // we set script version to tree version, if current activated version is below it,
+    // to serialize all the tree features anyway
     val scriptVersion = Math.max(VersionContext.current.activatedVersion, treeVersion).toByte
     val res = VersionContext.withVersions(scriptVersion, treeVersion) {
       ergoTree.root match {
@@ -142,11 +144,13 @@ class ErgoTreeSerializer {
     r.positionLimit = r.position + maxTreeSizeBytes
     val (h, sizeOpt) = deserializeHeaderAndSize(r)
     val bodyPos = r.position
+
+    val treeVersion = getVersion(h)
+    // Unlike serialization, during deserialization activated script version is used
+    val scriptVersion = VersionContext.current.activatedVersion
+
     val tree = try {
       try { // nested try-catch to intercept size limit exceptions and rethrow them as ValidationExceptions
-
-        val treeVersion = getVersion(h)
-        val scriptVersion = Math.max(VersionContext.current.activatedVersion, treeVersion).toByte
         VersionContext.withVersions(scriptVersion, treeVersion) {
           val cs = deserializeConstants(h, r)
           val previousConstantStore = r.constantStore
@@ -184,6 +188,9 @@ class ErgoTreeSerializer {
       catch {
         case e: ReaderPositionLimitExceeded =>
           CheckPositionLimit.throwValidationException(e)
+        case iae: IllegalArgumentException =>
+          throw SerializerException(
+            s"Tree version ($treeVersion) is above activated script version ($scriptVersion)", Some(iae))
       }
     }
     catch {
@@ -195,8 +202,9 @@ class ErgoTreeSerializer {
             val bytes = r.getBytes(numBytes)
             new ErgoTree(ErgoTree.DefaultHeader, EmptyConstants, Left(UnparsedErgoTree(bytes, ve)), bytes, None, None)
           case None =>
-            throw new SerializerException(
-              s"Cannot handle ValidationException, ErgoTree serialized without size bit.", Some(ve))
+            throw SerializerException(
+              s"Cannot handle ValidationException, ErgoTree serialized without size bit.",
+              Some(ve))
         }
     }
     finally {

@@ -2,7 +2,7 @@ package sigma
 
 import org.ergoplatform.{ErgoBox, ErgoHeader, ErgoLikeTransaction, Input}
 import scorex.util.encode.Base16
-import sigma.VersionContext.V6SoftForkVersion
+import sigma.VersionContext.{JitActivationVersion, V6SoftForkVersion}
 import org.ergoplatform.ErgoBox.Token
 import org.ergoplatform.settings.ErgoAlgos
 import scorex.crypto.authds.{ADKey, ADValue}
@@ -1429,14 +1429,18 @@ class LanguageSpecificationV6 extends LanguageSpecificationBase { suite =>
     )
 
     // before v6.0 the expected tree is not parsable
-    ErgoTree.fromBytes(expectedTreeBytes_beforeV6.toArray).isRightParsed shouldBe false
+    VersionContext.withVersions(JitActivationVersion, 0) {
+      Try(ErgoTree.fromBytes(expectedTreeBytes_beforeV6.toArray)).isSuccess shouldBe false
+    }
 
-    // in v6.0 the expected tree should be parsable and similar to the original tree
-    val tree = ErgoTree.fromBytes(expectedTreeBytes_V6.toArray)
-    tree.isRightParsed shouldBe true
-    tree.header shouldBe t2.header
-    tree.constants.length shouldBe t2.constants.length
-    tree.root shouldBe t2.root
+    VersionContext.withVersions(V6SoftForkVersion, 0) {
+      // in v6.0 the expected tree should be parsable and similar to the original tree
+      val tree = ErgoTree.fromBytes(expectedTreeBytes_V6.toArray)
+      tree.isRightParsed shouldBe true
+      tree.header shouldBe t2.header
+      tree.constants.length shouldBe t2.constants.length
+      tree.root shouldBe t2.root
+    }
   }
 
   property("Header new methods") {
@@ -3040,6 +3044,45 @@ class LanguageSpecificationV6 extends LanguageSpecificationBase { suite =>
     lazy val iou = newFeature(
       (t: (AvlTree, (Coll[KV], Coll[Byte]))) => t._1.insertOrUpdate(t._2._1, t._2._2),
       "{ (t: (AvlTree, (Coll[(Coll[Byte], Coll[Byte])], Coll[Byte]))) => t._1.insertOrUpdate(t._2._1, t._2._2) }",
+      FuncValue(
+        Array((1, SPair(SAvlTree, SPair(SCollectionType(SPair(SByteArray, SByteArray)), SByteArray)))),
+        BlockValue(
+          Array(
+            ValDef(
+              3,
+              List(),
+              SelectField.typed[Value[STuple]](
+                ValUse(
+                  1,
+                  SPair(SAvlTree, SPair(SCollectionType(SPair(SByteArray, SByteArray)), SByteArray))
+                ),
+                2.toByte
+              )
+            )
+          ),
+          MethodCall.typed[Value[SOption[SAvlTree.type]]](
+            SelectField.typed[Value[SAvlTree.type]](
+              ValUse(
+                1,
+                SPair(SAvlTree, SPair(SCollectionType(SPair(SByteArray, SByteArray)), SByteArray))
+              ),
+              1.toByte
+            ),
+            SAvlTreeMethods.insertOrUpdateMethod,
+            Array(
+              SelectField.typed[Value[SCollection[STuple]]](
+                ValUse(3, SPair(SCollectionType(SPair(SByteArray, SByteArray)), SByteArray)),
+                1.toByte
+              ),
+              SelectField.typed[Value[SCollection[SByte.type]]](
+                ValUse(3, SPair(SCollectionType(SPair(SByteArray, SByteArray)), SByteArray)),
+                2.toByte
+              )
+            ),
+            Map()
+          )
+        )
+      ),
       sinceVersion = V6SoftForkVersion)
 
     val key = keyCollGen.sample.get
