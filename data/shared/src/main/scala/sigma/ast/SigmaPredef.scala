@@ -433,7 +433,7 @@ object SigmaPredef {
 
           val d : Option[Value[rtpe.type]] = rtpe match {
             case SInt       => Some(IntConstant(0).asValue)
-            case SBoolean   => Some(BooleanConstant(false).withSrcCtx(currentSrcCtx.value))
+            case SBoolean   => Some(BooleanConstant(false).asValue)
             case SByte      => Some(ByteConstant(0).asValue)
             case SLong      => Some(LongConstant(0L).asValue)
             case SBigInt    => Some(BigIntConstant(0).asValue)
