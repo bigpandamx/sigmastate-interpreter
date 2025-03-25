@@ -150,6 +150,8 @@ class CollOverArray[@specialized A](val toArray: Array[A], val builder: CollBuil
     case obj: CollOverArray[_] if obj.tItem == this.tItem =>
       java.util.Objects.deepEquals(obj.toArray, this.toArray)
     case obj: PairColl[Any, Any] if obj.tItem == this.tItem =>
+      // in v6, we do compare PairColl with CollOverArray for tree version >= 3
+      // see https://github.com/ergoplatform/sigmastate-interpreter/issues/909
       if (VersionContext.current.isV3OrLaterErgoTreeVersion) {
         equalsPairCollWithCollOverArray(obj, this.asInstanceOf[CollOverArray[Any]])
       } else {
@@ -282,6 +284,8 @@ class PairOfCols[@specialized L, @specialized R](val ls: Coll[L], val rs: Coll[R
     case that: PairColl[_, _] if that.tItem == this.tItem =>
       ls == that.ls && rs == that.rs
     case that: CollOverArray[Any] if that.tItem == this.tItem =>
+      // in v6, we do compare PairColl with CollOverArray for tree version >= 3
+      // see https://github.com/ergoplatform/sigmastate-interpreter/issues/909
       if (VersionContext.current.isV3OrLaterErgoTreeVersion) {
         equalsPairCollWithCollOverArray(this.asInstanceOf[PairColl[Any, Any]], that)
       } else {

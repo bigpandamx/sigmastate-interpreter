@@ -90,6 +90,8 @@ sealed trait MethodsContainer {
     * @see getMethodById
     */
   def methodById(methodId: Byte): SMethod = {
+    // the #1011 check replaced with one with identical behavior but different opcode (1016), to activate
+    //  ReplacedRule(1011 -> 1016) during 6.0 activation
     if (VersionContext.current.isV6Activated) {
       ValidationRules.CheckAndGetMethodV6(this, methodId)
     } else {

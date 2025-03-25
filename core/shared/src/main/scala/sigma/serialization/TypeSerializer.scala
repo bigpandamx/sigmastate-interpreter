@@ -14,7 +14,9 @@ class TypeSerializer {
   import TypeSerializer._
 
   def getEmbeddableType(code: Int): SType = {
-    if (VersionContext.current.isV3OrLaterErgoTreeVersion) {
+    // the #1007 check replaced with one with identical behavior but different opcode (1017), to activate
+    //  ReplacedRule(1007 -> 1017) during 6.0 activation
+    if (VersionContext.current.isV6Activated) {
       CheckPrimitiveTypeCodeV6(code.toByte)
     } else {
       CheckPrimitiveTypeCode(code.toByte)
