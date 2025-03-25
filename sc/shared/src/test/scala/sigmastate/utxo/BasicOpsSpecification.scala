@@ -8,25 +8,15 @@ import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert, InsertOrUpdat
 import scorex.crypto.hash.{Blake2b256, Digest32}
 import scorex.util.ByteArrayBuilder
 import scorex.util.encode.Base16
-import org.scalatest.Assertion
-import scorex.util.encode.Base16
 import scorex.utils.Ints
 import scorex.util.serialization.VLQByteBufferWriter
 import scorex.utils.Longs
-import sigma.{Coll, Colls, SigmaTestingData, VersionContext}
+import sigma.{Coll, Colls, GroupElement, SigmaTestingData, UnsignedBigInt, VersionContext}
 import sigma.Extensions.ArrayOps
 import sigma.VersionContext.{V6SoftForkVersion, withVersions}
-import sigma.VersionContext.V6SoftForkVersion
-import sigma.VersionContext
-import sigma.GroupElement
-import sigma.VersionContext.V6SoftForkVersion
 import sigma.ast.SCollection.SByteArray
 import sigma.ast.SType.{AnyOps, tD}
-import sigma.data.{AvlTreeData, AvlTreeFlags, CAND, CAnyValue, CAvlTree, CHeader, CSigmaDslBuilder, CSigmaProp}
-import sigma.ast.SType.AnyOps
-import sigma.data.{AvlTreeData, CAnyValue, CBigInt, CGroupElement, CSigmaDslBuilder}
-import sigma.data.{AvlTreeData, CAnyValue, CHeader, CSigmaDslBuilder}
-import sigma.data.{AvlTreeData, AvlTreeFlags, CAND, CAnyValue, CHeader, CSigmaDslBuilder, CSigmaProp}
+import sigma.data.{AvlTreeData, AvlTreeFlags, CAND, CAnyValue, CAvlTree, CBigInt, CGroupElement, CHeader, CSigmaDslBuilder, CSigmaProp}
 import sigma.util.StringUtil._
 import sigma.ast._
 import sigma.ast.syntax._
@@ -1944,7 +1934,24 @@ class BasicOpsSpecification extends CompilerTestingCommons
     }
   }
 
-  // todo: roundtrip tests with deserializeTo from https://github.com/ScorexFoundation/sigmastate-interpreter/pull/979
+  property("serialize - deserialize - optional UnsignedBigInt") {
+    def deserTest() = test("serialize", env, ext,
+      s"""{
+            val ub = unsignedBigInt("5");
+            val opt = Global.some[UnsignedBigInt](ub)
+            val bs = Global.serialize(opt);
+            bs == fromBase16("010105") && Global.deserializeTo[Option[UnsignedBigInt]](bs).get == ub
+          }""",
+      null,
+      true
+    )
+
+    if (ergoTreeVersionInTests < V6SoftForkVersion) {
+      an [Exception] should be thrownBy deserTest()
+    } else {
+      deserTest()
+    }
+  }
 
   property("serialize - not spam") {
     val customExt = Seq(21.toByte -> ShortArrayConstant((1 to Short.MaxValue).map(_.toShort).toArray),
