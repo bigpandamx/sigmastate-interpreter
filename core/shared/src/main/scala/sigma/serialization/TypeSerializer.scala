@@ -14,7 +14,6 @@ class TypeSerializer {
   import TypeSerializer._
 
   def getEmbeddableType(code: Int): SType = {
-    // todo : add unsigned bit int to embeddable id to type
     if (VersionContext.current.isV6Activated) {
       CheckPrimitiveTypeCodeV6(code.toByte)
     } else {
