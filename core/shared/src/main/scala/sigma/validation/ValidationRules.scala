@@ -207,13 +207,17 @@ object ValidationRules {
     CheckPositionLimit
   )
 
-  private def ruleSpecs: Seq[ValidationRule] = {
-    if(VersionContext.current.isV6Activated) {
-      ruleSpecsV6
-    } else {
-      ruleSpecsV5
-    }
+  private def coreSettingsTemplate(ruleSpecs: Seq[ValidationRule]): SigmaValidationSettings = {
+    new MapSigmaValidationSettings({
+      val map = ruleSpecs.map(r => r.id -> (r, EnabledRule)).toMap
+      assert(map.size == ruleSpecs.size, s"Duplicate ruleIds ${ruleSpecs.groupBy(_.id).filter(g => g._2.length > 1)}")
+      map
+    })
   }
+
+  private lazy val coreSettingsV5 = coreSettingsTemplate(ruleSpecsV5)
+
+  private lazy val coreSettingsV6 = coreSettingsTemplate(ruleSpecsV6)
 
   /** Validation settings that correspond to the current version of the ErgoScript implementation.
     * Different version of the code will have a different set of rules here.
@@ -221,12 +225,13 @@ object ValidationRules {
     * This is immutable data structure, it can be augmented with RuleStates from block extension
     * sections of the blockchain, but that augmentation is only available in stateful context.
     */
-    // todo: versioned cache here for efficiency
-  def coreSettings: SigmaValidationSettings = new MapSigmaValidationSettings({
-    val map = ruleSpecs.map(r => r.id -> (r, EnabledRule)).toMap
-    assert(map.size == ruleSpecs.size, s"Duplicate ruleIds ${ruleSpecs.groupBy(_.id).filter(g => g._2.length > 1)}")
-    map
-  })
+  def coreSettings: SigmaValidationSettings = {
+    if (VersionContext.current.isV6Activated) {
+      coreSettingsV6
+    } else {
+      coreSettingsV5
+    }
+  }
 
   /** Executes the given `block` catching [[ValidationException]] and checking possible
     * soft-fork condition in the context of the given [[SigmaValidationSettings]].
