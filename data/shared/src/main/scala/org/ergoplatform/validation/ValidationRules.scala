@@ -131,14 +131,7 @@ object ValidationRules {
     }
   }
 
-  object CheckAndGetMethod extends CheckAndGetMethodTemplate(1011) {
-    override def isSoftFork(vs: SigmaValidationSettings,
-                            ruleId: Short,
-                            status: RuleStatus,
-                            args: Seq[Any]): Boolean = {
-      false
-    }
-  }
+  object CheckAndGetMethod extends CheckAndGetMethodTemplate(1011)
 
   object CheckAndGetMethodV6 extends CheckAndGetMethodTemplate(1016)
 
