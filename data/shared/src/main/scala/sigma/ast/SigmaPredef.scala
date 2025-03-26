@@ -412,7 +412,8 @@ object SigmaPredef {
          | The original \lst{Coll[Byte]} of the script is available as \lst{SELF.getReg[Coll[Byte]](id)}.
          | Type parameter \lst{T} result type of the deserialized script.
          | Throws an exception if the actual script type doesn't conform to \lst{T}.
-         | Returns a result of the script execution in the current context
+         | Returns a result of the script execution in the current context or the default value
+         | provided when the specified register is unavailable
         """.stripMargin,
         Seq(ArgInfo("id", "identifier of the register"),
           ArgInfo("default", "optional default value, if register is not available")))
@@ -454,10 +455,10 @@ object SigmaPredef {
           | The original \lst{Coll[Byte]} of the script is available as \lst{SELF.getReg[Coll[Byte]](id)}.
           | Type parameter \lst{T} result type of the deserialized script.
           | Throws an exception if the actual script type doesn't conform to \lst{T}.
-          | Returns a result of the script execution in the current context
+          | Returns a result of the script execution in the current context or an empty value
+          | of type \lst{T} when the specified register is unavailable
         """.stripMargin,
-        Seq(ArgInfo("id", "identifier of the register"),
-          ArgInfo("default", "optional default value, if register is not available")))
+        Seq(ArgInfo("id", "identifier of the register"))),
     )
 
     val globalFuncs: Map[String, PredefinedFunc] = Seq(

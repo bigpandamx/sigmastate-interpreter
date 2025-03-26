@@ -645,6 +645,18 @@ object SigmaDataReflection {
     )
   )
 
+  registerClassEntry(classOf[DeserializeRegister[_]],
+    constructors = Array(
+      mkConstructor(Array(classOf[RegisterId], classOf[SType], classOf[SOption[_]])) { args =>
+        new DeserializeRegister[SType](
+          args(0).asInstanceOf[RegisterId],
+          args(1).asInstanceOf[SType],
+          args(2).asInstanceOf[Option[Value[SType]]]
+        )
+      }
+    )
+  )
+
   registerClassEntry(classOf[LongToByteArray],
     constructors = Array(
       mkConstructor(Array(classOf[Value[_]])) { args =>
