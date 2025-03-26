@@ -458,7 +458,7 @@ object SigmaPredef {
           | Returns a result of the script execution in the current context or an empty value
           | of type \lst{T} when the specified register is unavailable
         """.stripMargin,
-        Seq(ArgInfo("id", "identifier of the register"))),
+        Seq(ArgInfo("id", "identifier of the register")))
     )
 
     val globalFuncs: Map[String, PredefinedFunc] = Seq(
