@@ -432,22 +432,8 @@ object SigmaPredef {
             throw new InvalidArguments(s"Invalid register specified $id")
           }
 
-          val d : Option[Value[rtpe.type]] = rtpe match {
-            case SInt       => Some(IntConstant(0).asValue)
-            case SBoolean   => Some(BooleanConstant(false).asValue)
-            case SByte      => Some(ByteConstant(0).asValue)
-            case SLong      => Some(LongConstant(0L).asValue)
-            case SBigInt    => Some(BigIntConstant(0).asValue)
-            case SSigmaProp => Some(SigmaPropConstant(CSigmaProp(false)).asValue)
-            case c: SCollection[a] =>
-              implicit val elemRType: RType[a#WrappedType] = asType(stypeToRType(c.elemType))
-              implicit val elemCT: ClassTag[a#WrappedType] = elemRType.classTag
-              Some(CollectionConstant(Colls.fromArray(elemRType.emptyArray), c.elemType).asValue)
-            case _ => None
-          }
-
           val r: RegisterId = org.ergoplatform.ErgoBox.registerByIndex(idx)
-          mkDeserializeRegister[rtpe.type](r, rtpe, d)
+          mkDeserializeRegister[rtpe.type](r, rtpe, None)
         }),
       OperationInfo(DeserializeRegister,
         """Extracts SELF register as \lst{Coll[Byte]}, deserializes it to script
@@ -455,8 +441,7 @@ object SigmaPredef {
           | The original \lst{Coll[Byte]} of the script is available as \lst{SELF.getReg[Coll[Byte]](id)}.
           | Type parameter \lst{T} result type of the deserialized script.
           | Throws an exception if the actual script type doesn't conform to \lst{T}.
-          | Returns a result of the script execution in the current context or an empty value
-          | of type \lst{T} when the specified register is unavailable
+          | Returns a result of the script execution in the current context
         """.stripMargin,
         Seq(ArgInfo("id", "identifier of the register")))
     )
