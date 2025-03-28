@@ -17,6 +17,7 @@ import sigma.{SigmaException, ast}
 import sigmastate.interpreter.Interpreter.ScriptEnv
 
 import scala.collection.mutable.ArrayBuffer
+import scala.language.{existentials,implicitConversions}
 
 /** Perform translation of typed expression given by [[Value]] to a graph in IRContext.
   * Which be than be translated to [[ErgoTree]] by using [[TreeBuilding]].
@@ -552,6 +553,10 @@ trait GraphBuilding extends Base with DefRewriting { IR: IRContext =>
       case d: DeserializeContext[T] =>
         val e = stypeToElem(d.tpe)
         DeserializeContextDef(d, e)
+
+      case d: DeserializeRegister[T] =>
+        val e = stypeToElem(d.tpe)
+        DeserializeRegisterDef[T](d, e)
 
       case ValUse(valId, _) =>
         env.getOrElse(valId, !!!(s"ValUse $valId not found in environment $env"))

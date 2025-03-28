@@ -5,6 +5,7 @@ import org.ergoplatform._
 import sigma.Colls
 import sigma.Extensions.ArrayOps
 import sigma.ast.SCollection.SByteArray
+import sigma.ast.SOption
 import sigma.ast.SType.AnyOps
 import sigma.data.{AvlTreeData, CAnyValue, CSigmaDslBuilder}
 import sigma.util.StringUtil._
@@ -19,7 +20,7 @@ import sigmastate.interpreter.CErgoTreeEvaluator.DefaultEvalSettings
 import sigmastate.interpreter.Interpreter._
 import sigma.ast.Apply
 import sigma.eval.EvalSettings
-import sigma.exceptions.InvalidType
+import sigma.exceptions.{InterpreterException, InvalidType}
 import sigma.serialization.ValueSerializer
 import sigmastate.utils.Helpers._
 
@@ -200,6 +201,172 @@ class BasicOpsSpecification extends CompilerTestingCommons
       "executeFromVar[SigmaProp](21)",
       null,
       true
+    )
+  }
+
+  property("executeFromSelfRegWithDefault - SigmaProp") {
+    val script = GT(Height, IntConstant(-1)).toSigmaProp
+    val scriptBytes = ValueSerializer.serialize(script)
+
+    val defScript = EQ(Plus(IntConstant(1), IntConstant(5)), 7).toSigmaProp
+    val defBytes = ValueSerializer.serialize(defScript)
+
+    val customExt = Seq(21.toByte -> ByteArrayConstant(defBytes))
+    val customEnv = Map(
+        "defaultVal" -> CAnyValue(21.toByte)
+    )
+
+    test("executeFromSelfReg", customEnv, customExt,
+      "executeFromSelfRegWithDefault[SigmaProp](4, getVar[SigmaProp](defaultVal).get)",
+      null,
+      true,
+      additionalRegistersOpt = Some(Map(
+        reg1 -> ByteArrayConstant(scriptBytes)
+      ))
+    )
+  }
+
+  property("executeFromSelfRegWithDefault - Coll[Byte]") {
+    val bytes = Slice(ByteArrayConstant(Colls.fromArray(Array.fill(5)(1.toByte))), IntConstant(1), IntConstant(3))
+    val scriptBytes = ValueSerializer.serialize(bytes)
+
+    // this is bound to defaultByte in order to provide an array that's not size == 2
+    val dval = ByteArrayConstant(Colls.fromArray(Array.fill(3)(1.toByte)))
+    val defaultBytes = ValueSerializer.serialize(dval)
+
+    val customExt = Seq(21.toByte -> ByteArrayConstant(defaultBytes))
+    val customEnv = Map(
+        "defaultVal" -> CAnyValue(21.toByte)
+    )    
+
+    test("executeFromSelfReg", customEnv, customExt,
+      "{val ba = executeFromSelfRegWithDefault[Coll[Byte]](4, getVar[Coll[Byte]](defaultVal).get); ba.size == 2 }",
+      null,
+      true,
+      additionalRegistersOpt = Some(Map(
+        reg1 -> ByteArrayConstant(scriptBytes)
+      ))
+    )
+  }
+
+  property("executeFromSelfRegWithDefault - Int") {
+    val bytes = Plus(IntConstant(2), IntConstant(3))
+    val scriptBytes = ValueSerializer.serialize(bytes)
+
+    test("executeFromSelfReg", env, ext,
+      "{ executeFromSelfRegWithDefault[Int](4, getVar[Int](1).get) == 5 }",
+      null,
+      true,
+      additionalRegistersOpt = Some(Map(
+        reg1 -> ByteArrayConstant(scriptBytes)
+      ))
+    )
+  }
+
+  property("executeFromSelfRegWithDefault - ScriptReduction") {
+    assertExceptionThrown(
+      test("executeFromSelfReg", env, ext,
+        "{ executeFromSelfRegWithDefault[Int](4, getVar[Int](1).get) == 2 }",
+        null,
+        true,
+        additionalRegistersOpt = Some(Map())
+      ),
+      e => {
+        val r = rootCause(e)
+        r.isInstanceOf[InterpreterException] && r.getMessage == "Script reduced to false"
+      }
+    )
+  }
+
+  property("executeFromSelfRegWithDefault - ForceDefault") {
+    test("executeFromSelfReg", env, ext,
+      "{ executeFromSelfRegWithDefault[Int](4, getVar[Int](2).get) == 2 }",
+      null,
+      true,
+      additionalRegistersOpt = Some(Map())
+    )
+  }
+
+  property("executeFromSelfRegWithDefault - InvalidRegister") {
+    test("executeFromSelfReg", env, ext,
+      "{ executeFromSelfRegWithDefault[Int](99, getVar[Int](2).get) == 2 }",
+      null,
+      true,
+      additionalRegistersOpt = Some(Map())
+    )
+  }
+
+  property("executeFromSelfReg - SigmaProp") {
+    val script = GT(Height, IntConstant(-1)).toSigmaProp
+    val scriptBytes = ValueSerializer.serialize(script)
+
+    val defScript = EQ(Plus(IntConstant(1), IntConstant(5)), 7).toSigmaProp
+    val defBytes = ValueSerializer.serialize(defScript)
+
+    val customExt = Seq(21.toByte -> ByteArrayConstant(defBytes))
+    val customEnv = Map(
+      "defaultVal" -> CAnyValue(21.toByte)
+    )
+
+    test("executeFromSelfReg", customEnv, customExt,
+      "executeFromSelfReg[SigmaProp](4)",
+      null,
+      true,
+      additionalRegistersOpt = Some(Map(
+        reg1 -> ByteArrayConstant(scriptBytes)
+      ))
+    )
+  }
+
+  property("executeFromSelfReg - Coll[Byte]") {
+    val bytes = Slice(ByteArrayConstant(Colls.fromArray(Array.fill(5)(1.toByte))), IntConstant(1), IntConstant(3))
+    val scriptBytes = ValueSerializer.serialize(bytes)
+
+    // this is bound to defaultByte in order to provide an array that's not size == 2
+    val dval = ByteArrayConstant(Colls.fromArray(Array.fill(3)(1.toByte)))
+    val defaultBytes = ValueSerializer.serialize(dval)
+
+    val customExt = Seq(21.toByte -> ByteArrayConstant(defaultBytes))
+    val customEnv = Map(
+      "defaultVal" -> CAnyValue(21.toByte)
+    )
+
+    test("executeFromSelfReg", customEnv, customExt,
+      "{val ba = executeFromSelfReg[Coll[Byte]](4); ba.size == 2 }",
+      null,
+      true,
+      additionalRegistersOpt = Some(Map(
+        reg1 -> ByteArrayConstant(scriptBytes)
+      ))
+    )
+  }
+
+  property("executeFromSelfReg - Int") {
+    val bytes = Plus(IntConstant(2), IntConstant(3))
+    val scriptBytes = ValueSerializer.serialize(bytes)
+
+    test("executeFromSelfReg", env, ext,
+      "{ executeFromSelfReg[Int](4) == 5 }",
+      null,
+      true,
+      additionalRegistersOpt = Some(Map(
+        reg1 -> ByteArrayConstant(scriptBytes)
+      ))
+    )
+  }
+
+  property("executeFromSelfReg - InvalidRegister") {
+    assertExceptionThrown(
+      test("executeFromSelfReg", env, ext,
+        "{ executeFromSelfReg[Int](99) == 2 }",
+        null,
+        true,
+        additionalRegistersOpt = Some(Map())
+      ),
+      e => {
+        val r = rootCause(e)
+        r.isInstanceOf[sigma.exceptions.InvalidArguments] && r.getMessage.startsWith("Invalid register specified")
+      }
     )
   }
 
