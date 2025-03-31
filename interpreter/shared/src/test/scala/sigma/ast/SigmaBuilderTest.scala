@@ -134,6 +134,11 @@ class SigmaBuilderTest extends AnyPropSpec with ScalaCheckPropertyChecks with Ma
     testSuccess(coll, TransformingSigmaBuilder.mkCollectionConstant(coll, c.tpe))
   }
 
+  def testOption[T <: SType](v: T#WrappedType, c: Constant[T])(implicit t: RType[T#WrappedType]) = {
+    testSuccess(v, OptionConstant(v, c.tpe))
+  }
+
+
   property("liftToConstant Boolean") {
       val v = true
       val c = BooleanConstant(v)
@@ -144,6 +149,7 @@ class SigmaBuilderTest extends AnyPropSpec with ScalaCheckPropertyChecks with Ma
         testArrayFailure[SBoolean.type](v, c)
       }
       testColl[SBoolean.type](v, c)
+      testOption[SBoolean.type](v, c)
   }
 
   property("liftToConstant Byte") {

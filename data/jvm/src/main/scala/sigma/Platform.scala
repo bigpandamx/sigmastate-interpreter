@@ -2,7 +2,7 @@ package sigma
 
 import org.ergoplatform.ErgoBox
 import sigma.ast._
-import sigma.data.{AvlTreeData, Nullable, SigmaBoolean}
+import sigma.data.{AvlTreeData, Nullable, OptionType, SigmaBoolean}
 import sigma.eval.SigmaDsl
 
 import java.math.BigInteger
@@ -59,6 +59,11 @@ object Platform {
       case coll: Coll[a] =>
         val tpeItem = Evaluation.rtypeToSType(coll.tItem)
         Nullable(mkCollectionConstant(coll.asInstanceOf[SCollection[SType]#WrappedType], tpeItem))
+      case opt: Option[_] =>
+
+     //   val tpeItem = Evaluation.rtypeToSType(opt.tA)
+      //  Nullable(mkConstant(opt, tpeItem))
+        Nullable.None
       case _ =>
         Nullable.None
     }
