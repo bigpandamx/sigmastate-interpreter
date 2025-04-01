@@ -3294,4 +3294,13 @@ class BasicOpsSpecification extends CompilerTestingCommons
     }
   }
 
+  property("Preheader") {
+    test("some", env, ext,
+      s"""{
+         |   CONTEXT.preHeader.height == 0
+         |}""".stripMargin,
+      null
+    )
+  }
+
 }
