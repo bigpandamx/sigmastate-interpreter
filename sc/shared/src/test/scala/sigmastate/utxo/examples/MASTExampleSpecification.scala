@@ -97,20 +97,21 @@ class MASTExampleSpecification extends CompilerTestingCommons
 //
     val es ="""{
         | val scriptId = 21.toByte
-        | val temp = getVar[Coll[Byte]](scriptId).get
-        | val scriptHash = blake2b256(temp)
+        | val scriptBytes = getVar[Coll[Byte]](21).get
+        | val scriptHash = blake2b256(scriptBytes)
         | val script1Bytes = sigmaProp(true)
         | val script1Hash = blake2b256(script1Bytes.propBytes)
         | val script2 = sigmaProp(INPUTS.size.toLong > 1L)
         | val script2Hash = blake2b256(script2.propBytes)
+        | val script = getVar[SBoolean](21).get
         |
-        | if(INPUTS.size == 1) {
-        |   scriptHash == script1Hash
-        | } else {
-        |   scriptHash == script2Hash
-        | }
+        | script
         |}""".stripMargin
-
+//    if(INPUTS.size == 1) {
+//      scriptHash == script1Hash
+//    } else {
+//      scriptHash == script2Hash
+//    }
     val esProp = (env: Map[String, _])
       => mkTestErgoTree(compile(env, es)(IR).asBoolValue.toSigmaProp)
 
