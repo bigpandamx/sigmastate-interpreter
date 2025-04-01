@@ -59,11 +59,6 @@ object Platform {
       case coll: Coll[a] =>
         val tpeItem = Evaluation.rtypeToSType(coll.tItem)
         Nullable(mkCollectionConstant(coll.asInstanceOf[SCollection[SType]#WrappedType], tpeItem))
-      case opt: Option[_] =>
-
-     //   val tpeItem = Evaluation.rtypeToSType(opt.tA)
-      //  Nullable(mkConstant(opt, tpeItem))
-        Nullable.None
       case _ =>
         Nullable.None
     }

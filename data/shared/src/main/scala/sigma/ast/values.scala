@@ -572,22 +572,6 @@ object HeaderConstant {
   }
 }
 
-object OptionConstant {
-  def apply[T <: SType](value: T#WrappedType, elementType: T): Constant[SOption[T]] =
-    Constant[SOption[T]](Option(value), SOption(elementType))
-
-  def unapply[T <: SType](node: Value[SCollection[T]]): Option[(Option[T#WrappedType], T)] = node match {
-    case c: Constant[SOption[T]]@unchecked if c.tpe.isOption =>
-      val v = c.value.asInstanceOf[Option[T#WrappedType]]
-      val t = c.tpe.elemType
-      Some((v, t))
-    case _ => None
-  }
-}
-
-object IntOptionConstant {
-  def apply[SInt](i: Int): Constant[SOption[SInt.type]] = OptionConstant.apply[SInt.type](i, SInt)
-}
 
 trait NotReadyValueInt extends NotReadyValue[SInt.type] {
   override def tpe = SInt

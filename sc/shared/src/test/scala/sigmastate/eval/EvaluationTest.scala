@@ -1,16 +1,14 @@
 package sigmastate.eval
 
 import org.ergoplatform.ErgoBox
-import sigma.ast.{AND, ConcreteCollection, CreateProveDlog, DecodePoint, EQ, ErgoTree, FuncValue, Global, IntArrayConstant, IntConstant, IntOptionConstant, MethodCall, OptionConstant, OptionIsDefined, SGlobalMethods, SInt, SOption, SSigmaProp, STypeVar, SigmaPropConstant, SigmaPropIsProven, SubstConstants, ValUse, Value}
+import sigma.ast.{AND, ConcreteCollection, CreateProveDlog, DecodePoint, EQ, ErgoTree, IntArrayConstant, IntConstant, SSigmaProp, SigmaPropConstant, SigmaPropIsProven, SubstConstants}
 import sigmastate.helpers.ContextEnrichingTestProvingInterpreter
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.Interpreter._
 import scalan.BaseCtxTests
-import sigma.VersionContext
 import sigma.ast.syntax.SigmaPropValue
 import sigma.data.ProveDlog
 import sigmastate.lang.LangTests
-import sigma.util.BenchmarkUtil._
 import sigmastate.crypto.DLogProtocol.DLogProverInput
 import sigma.serialization.ErgoTreeSerializer.DefaultSerializer
 
@@ -104,26 +102,4 @@ class EvaluationTest extends BaseCtxTests
       true)
   }
 
-  test("SubstConst - option (6.0)") {
-    VersionContext.withVersions(VersionContext.V6SoftForkVersion, VersionContext.V6SoftForkVersion) {
-      def script(opt: Value[SOption[SInt.type]]): SigmaPropValue =
-        AND(EQ(IntConstant(1), IntConstant(1)), OptionIsDefined(opt)).toSigmaProp
-
-      val pk1 = IntOptionConstant(1)
-      val pk2 = IntOptionConstant(2)
-      val script1 = script(pk1)
-      val script2 = script(pk2)
-      val inputBytes = DefaultSerializer.serializeErgoTree(mkTestErgoTree(script1))
-      val positions = IntArrayConstant(Array[Int](2))
-      // in ergo we have only byte array of a serialized group element
-      val newVals = ConcreteCollection(Array(pk2), SOption[SInt.type])
-
-    val expectedBytes = DefaultSerializer.serializeErgoTree(mkTestErgoTree(script2))
-    val ctx = newErgoContext(height = 1, boxToSpend)
-    reduce(emptyEnv, "SubstConst",
-      EQ(SubstConstants(inputBytes, positions, newVals), expectedBytes),
-      ctx,
-      true)
-    }
-  }
 }
