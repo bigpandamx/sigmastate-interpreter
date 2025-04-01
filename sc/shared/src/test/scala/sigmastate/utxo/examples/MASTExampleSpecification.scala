@@ -1,6 +1,7 @@
 package sigmastate.utxo.examples
 
 import org.ergoplatform._
+import org.scalatest.Assertion
 import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert, Lookup}
 import scorex.crypto.authds.{ADKey, ADValue}
 import scorex.crypto.hash.{Blake2b256, Digest32}
@@ -11,12 +12,13 @@ import sigma.ast._
 import sigmastate._
 import sigma.Extensions.ArrayOps
 import sigma.ast.syntax.{GetVarByteArray, OptionValueOps}
-import sigmastate.helpers.{CompilerTestingCommons, ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter}
+import sigmastate.helpers.{CompilerTestingCommons, ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter, ErgoLikeTestProvingInterpreter}
 import sigmastate.helpers.TestingHelpers._
 import sigma.ast.syntax._
 import sigma.eval.SigmaDsl
 import sigmastate.interpreter.Interpreter._
 import sigma.serialization.ValueSerializer
+import sigmastate.interpreter.Interpreter
 
 import scala.util.Random
 
@@ -75,6 +77,68 @@ class MASTExampleSpecification extends CompilerTestingCommons
     (new ErgoLikeTestInterpreter).verify(verifyEnv, prop, ctx, proof, fakeMessage).get._1 shouldBe true
   }
 
+  /**
+   * In the provided example simple branching by condition, based on number of inputs
+   */
+  property("Merklized Abstract Syntax Tree - simple branching ErgoScript") {
+//    val scriptId = 21.toByte
+//    val scriptIsCorrect = DeserializeContext(scriptId, SBoolean)
+//    val scriptHash = CalcBlake2b256(GetVarByteArray(scriptId).get)
+//    val script1Bytes = ValueSerializer.serialize(TrueLeaf)
+//    val script1Hash = Blake2b256(script1Bytes)
+//    val script2Hash = Blake2b256(ValueSerializer.serialize(GT(SizeOf(Inputs).upcastTo(SLong), LongConstant(1))))
+//
+//    val prop = mkTestErgoTree(AND(
+//      scriptIsCorrect,
+//      If(
+//        EQ(SizeOf(Inputs), 1),
+//        EQ(scriptHash, script1Hash),
+//        EQ(scriptHash, script2Hash))).toSigmaProp)
+//
+    val es ="""{
+        | val scriptId = 21.toByte
+        | val temp = getVar[Coll[Byte]](scriptId).get
+        | val scriptHash = blake2b256(temp)
+        | val script1Bytes = sigmaProp(true)
+        | val script1Hash = blake2b256(script1Bytes.propBytes)
+        | val script2 = sigmaProp(INPUTS.size.toLong > 1L)
+        | val script2Hash = blake2b256(script2.propBytes)
+        |
+        | if(INPUTS.size == 1) {
+        |   scriptHash == script1Hash
+        | } else {
+        |   scriptHash == script2Hash
+        | }
+        |}""".stripMargin
+
+    val esProp = (env: Map[String, _])
+      => mkTestErgoTree(compile(env, es)(IR).asBoolValue.toSigmaProp)
+
+    val proveEnv = emptyEnv + (ScriptNameProp -> "simple_branching_prove")
+    val input1 = testBox(20, esProp(proveEnv), 0)
+    val tx = UnsignedErgoLikeTransaction(IndexedSeq(input1).map(i => new UnsignedInput(i.id)),
+      IndexedSeq(testBox(1, TrueTree, 0)))
+    val ctx = ErgoLikeContextTesting(
+      currentHeight = 50,
+      lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContextTesting.dummyPubkey,
+      boxesToSpend = IndexedSeq(input1),
+      tx,
+      self = input1, activatedVersionInTests)
+
+//    lazy val prover = new ErgoLikeTestProvingInterpreter()
+
+    val scriptId = 21.toByte
+    val script1Bytes = ValueSerializer.serialize(TrueLeaf)
+    val prover = new ContextEnrichingTestProvingInterpreter()
+      .withContextExtender(scriptId, ByteArrayConstant(script1Bytes))
+
+
+    val proof = prover.prove(proveEnv, esProp(proveEnv), ctx, fakeMessage).get
+
+    val verifyEnv = emptyEnv + (ScriptNameProp -> "simple_branching_verify")
+    (new ErgoLikeTestInterpreter).verify(verifyEnv, esProp(proveEnv), ctx, proof, fakeMessage).get._1 shouldBe true
+  }
   /**
     * In the provided example there are 5 different branches of a tree, each one require to reveal some secret.
     */
