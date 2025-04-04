@@ -359,13 +359,7 @@ class Context {
     *  @return A new $coll with all elements of this $coll in reversed order.
     */
   def reverse: Coll[T]
-
-  /** Builds a new $coll from this $coll without any duplicate elements.
-    *
-    *  @return  A new $coll which contains the first occurrence of every element of this $coll.
-    */
-  def distinct: Coll[T]
-  
+ 
 }
 
 /** Represents data of the block headers available in scripts. */
@@ -749,9 +743,23 @@ class AvlTree {
     * Return None if operations were not performed.
     * @param operations collection of key-value pairs to update in this
     *                   authenticated dictionary.
-    * @param proof      data to reconstruct part of the tree
+    * @param proof      subtree which is enough to check operations
     */
   def update(operations: Coll[(Coll[Byte], Coll[Byte])], proof: Coll[Byte]): Option[AvlTree]
+
+
+ /** Perform insertions or updates of key-value entries into this tree using proof `proof`.
+   * Throws exception if proof is incorrect
+   *
+   * @note CAUTION! Pairs must be ordered the same way they were in ops
+   * before proof was generated.
+   * Return Some(newTree) if successful
+   * Return None if operations were not performed.
+   * @param operations collection of key-value pairs to insert or update in this
+   *                   authenticated dictionary.
+   * @param proof subtree which is enough to check operations
+   */
+ def insertOrUpdate(operations: Coll[(Coll[Byte], Coll[Byte])], proof: Coll[Byte]): Option[AvlTree]
 
   /** Perform removal of entries into this tree using proof `proof`.
     * Throws exception if proof is incorrect
@@ -904,9 +912,6 @@ class Coll[A] {
     * Builds a new collection by applying a function to all elements of this collection
     * and using the elements of the resulting collections.
     *
-    * Function `f` is constrained to be of the form `x => x.someProperty`, otherwise
-    * it is illegal.
-    * 
     * @param f the function to apply to each element.
     * @tparam B the element type of the returned collection.
     * @return a new collection of type `Coll[B]` resulting from applying the given collection-valued function
@@ -1053,7 +1058,7 @@ There are some functions which do not belong to other types, thus they put under
     * @param nonce - used to pad the message to get Proof-of-Work hash function output with desirable properties
     * @param h - PoW protocol specific padding for table uniqueness (e.g. block height in Ergo)
     */
-  def powHit(k: Int, msg: Coll[Byte], nonce: Coll[Byte], h: Coll[Byte], N: Int): BigInt
+  def powHit(k: Int, msg: Coll[Byte], nonce: Coll[Byte], h: Coll[Byte], N: Int): UnsignedBigInt
 
   /** Deserializes provided `bytes` into a value of type `T`. **/
   def deserializeTo[T](bytes: Coll[Byte])(implicit cT: RType[T]): T

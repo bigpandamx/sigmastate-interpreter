@@ -16,8 +16,7 @@ import sigma.data.ExactIntegral.{ByteIsExactIntegral, IntIsExactIntegral, LongIs
 import sigma.data.NumericOps.BigIntIsExactIntegral
 import sigma.data.OverloadHack.Overloaded1
 import sigma.data.UnsignedBigIntNumericOps.UnsignedBigIntIsExactIntegral
-import sigma.data.{DataValueComparer, KeyValueColl, Nullable, RType, SigmaConstants}
-import sigma.data.{CBigInt, DataValueComparer, KeyValueColl, Nullable, RType, SigmaConstants}
+import sigma.data.{CBigInt, CUnsignedBigInt, DataValueComparer, KeyValueColl, Nullable, RType, SigmaConstants}
 import sigma.eval.{CostDetails, ErgoTreeEvaluator, TracedCost}
 import sigma.pow.Autolykos2PowValidation
 import sigma.reflection.RClass
@@ -85,13 +84,19 @@ sealed trait MethodsContainer {
 
   /** Lookup method in this type by method's id or throw ValidationException.
     * This method can be used in trySoftForkable section to either obtain valid method
-    * or catch ValidatioinException which can be checked for soft-fork condition.
+    * or catch ValidationException which can be checked for soft-fork condition.
     * It delegate to getMethodById to lookup method.
     *
     * @see getMethodById
     */
   def methodById(methodId: Byte): SMethod = {
-    ValidationRules.CheckAndGetMethod(this, methodId)
+    // the #1011 check replaced with one with identical behavior but different opcode (1016), to activate
+    //  ReplacedRule(1011 -> 1016) during 6.0 activation
+    if (VersionContext.current.isV6Activated) {
+      ValidationRules.CheckAndGetMethodV6(this, methodId)
+    } else {
+      ValidationRules.CheckAndGetMethod(this, methodId)
+    }
   }
 
   /** Finds a method descriptor [[SMethod]] for the given name. */
@@ -132,7 +137,7 @@ object MethodsContainer {
   private val containersV6 = new SparseArrayContainer[MethodsContainer](methodsV6.map(m => (m.typeId, m)))
 
   def contains(typeId: TypeCode): Boolean = {
-    if (VersionContext.current.isV6SoftForkActivated) {
+    if (VersionContext.current.isV3OrLaterErgoTreeVersion) {
       containersV6.contains(typeId)
     } else {
       containersV5.contains(typeId)
@@ -140,7 +145,7 @@ object MethodsContainer {
   }
 
   def apply(typeId: TypeCode): MethodsContainer = {
-    if (VersionContext.current.isV6SoftForkActivated) {
+    if (VersionContext.current.isV3OrLaterErgoTreeVersion) {
       containersV6(typeId)
     } else {
       containersV5(typeId)
@@ -157,7 +162,7 @@ object MethodsContainer {
     case tup: STuple =>
       STupleMethods.getTupleMethod(tup, methodName)
     case _ =>
-      if (VersionContext.current.isV6SoftForkActivated) {
+      if (VersionContext.current.isV3OrLaterErgoTreeVersion) {
         containersV6.get(tpe.typeCode).flatMap(_.method(methodName))
       } else {
         containersV5.get(tpe.typeCode).flatMap(_.method(methodName))
@@ -208,7 +213,7 @@ trait SNumericTypeMethods extends MonoTypeMethods {
   }
 
   protected override def getMethods(): Seq[SMethod] = {
-    if (VersionContext.current.isV6SoftForkActivated) {
+    if (VersionContext.current.isV3OrLaterErgoTreeVersion) {
       super.getMethods() ++ v6Methods
     } else {
       super.getMethods() ++ v5Methods
@@ -523,7 +528,7 @@ case object SBigIntMethods extends SNumericTypeMethods {
               ArgInfo("m", "modulo value"))
 
   protected override def getMethods(): Seq[SMethod]  = {
-    if (VersionContext.current.isV6SoftForkActivated) {
+    if (VersionContext.current.isV3OrLaterErgoTreeVersion) {
       super.getMethods() ++ Seq(ToUnsigned, ToUnsignedMod)
     } else {
       super.getMethods()
@@ -651,7 +656,7 @@ case object SGroupElementMethods extends MonoTypeMethods {
       MultiplyMethod,
       NegateMethod)
 
-    super.getMethods() ++ (if (VersionContext.current.isV6SoftForkActivated) {
+    super.getMethods() ++ (if (VersionContext.current.isV3OrLaterErgoTreeVersion) {
       v5Methods ++ Seq(ExponentiateUnsignedMethod)
     } else {
       v5Methods
@@ -974,94 +979,9 @@ object SCollectionMethods extends MethodsContainer with MethodByNameUnapply {
       .withInfo(MethodCall,
         """ Builds a new collection by applying a function to all elements of this collection
          | and using the elements of the resulting collections.
-         | Function \lst{f} is constrained to be of the form \lst{x => x.someProperty}, otherwise
-         | it is illegal.
          | Returns a new collection of type \lst{Coll[B]} resulting from applying the given collection-valued function
          | \lst{f} to each element of this collection and concatenating the results.
         """.stripMargin, ArgInfo("f", "the function to apply to each element."))
-
-  /** We assume all flatMap body patterns have similar execution cost. */
-  final val CheckFlatmapBody_Info = OperationCostInfo(
-    PerItemCost(baseCost = JitCost(20), perChunkCost = JitCost(20), chunkSize = 1),
-    NamedDesc("CheckFlatmapBody"))
-
-
-  /** This patterns recognize all expressions, which are allowed as lambda body
-    * of flatMap. Other bodies are rejected with throwing exception.
-    */
-  val flatMap_BodyPatterns = Array[PartialFunction[SValue, Int]](
-    { case MethodCall(ValUse(id, _), _, args, _) if args.isEmpty => id },
-    { case ExtractScriptBytes(ValUse(id, _)) => id },
-    { case ExtractId(ValUse(id, _)) => id },
-    { case SigmaPropBytes(ValUse(id, _)) => id },
-    { case ExtractBytes(ValUse(id, _)) => id },
-    { case ExtractBytesWithNoRef(ValUse(id, _)) => id }
-  )
-
-  /** Check the given expression is valid body of flatMap argument lambda.
-    * @param varId id of lambda variable (see [[FuncValue]].args)
-    * @param expr expression with is expected to use varId in ValUse node.
-    * @return true if the body is allowed
-    */
-  def isValidPropertyAccess(varId: Int, expr: SValue)
-                           (implicit E: ErgoTreeEvaluator): Boolean = {
-    var found = false
-    // NOTE: the cost depends on the position of the pattern since
-    // we are checking until the first matching pattern found.
-    E.addSeqCost(CheckFlatmapBody_Info) { () =>
-      // the loop is bounded because flatMap_BodyPatterns is fixed
-      var i = 0
-      val nPatterns = flatMap_BodyPatterns.length
-      while (i < nPatterns && !found) {
-        val p = flatMap_BodyPatterns(i)
-        found = p.lift(expr) match {
-          case Some(id) => id == varId  // `id` in the pattern is equal to lambda `varId`
-          case None => false
-        }
-        i += 1
-      }
-      i // how many patterns checked
-    }
-    found
-  }
-
-  /** Operation descriptor for matching `flatMap` method calls with valid lambdas. */
-  final val MatchSingleArgMethodCall_Info = OperationCostInfo(
-    FixedCost(JitCost(30)), NamedDesc("MatchSingleArgMethodCall"))
-
-  /** Recognizer of `flatMap` method calls with valid lambdas. */
-  object IsSingleArgMethodCall {
-    def unapply(mc:MethodCall)
-               (implicit E: ErgoTreeEvaluator): Nullable[(Int, SValue)] = {
-      var res: Nullable[(Int, SValue)] = Nullable.None
-      E.addFixedCost(MatchSingleArgMethodCall_Info) {
-        res = mc match {
-          case MethodCall(_, _, Seq(FuncValue(args, body)), _) if args.length == 1 =>
-            val id = args(0)._1
-            Nullable((id, body))
-          case _ =>
-            Nullable.None
-        }
-      }
-      res
-    }
-  }
-
-  /** Checks that the given [[MethodCall]] operation is valid flatMap. */
-  def checkValidFlatmap(mc: MethodCall)(implicit E: ErgoTreeEvaluator) = {
-    mc match {
-      case IsSingleArgMethodCall(varId, lambdaBody)
-            if isValidPropertyAccess(varId, lambdaBody) =>
-        // ok, do nothing
-      case _ =>
-        throwInvalidFlatmap(mc)
-    }
-  }
-
-  def throwInvalidFlatmap(mc: MethodCall) = {
-    sys.error(
-      s"Unsupported lambda in flatMap: allowed usage `xs.flatMap(x => x.property)`: $mc")
-  }
 
   /** Implements evaluation of Coll.flatMap method call ErgoTree node.
     * Called via reflection based on naming convention.
@@ -1196,7 +1116,7 @@ object SCollectionMethods extends MethodsContainer with MethodByNameUnapply {
   val ReverseMethod = SMethod(this, "reverse",
     SFunc(Array(ThisType), ThisType, paramIVSeq), 30, reverseCostKind)
     .withIRInfo(MethodCallIrBuilder)
-    .withInfo(MethodCall, "")
+    .withInfo(MethodCall, "Returns inversed collection.")
 
   /** Implements evaluation of Coll.reverse method call ErgoTree node.
     * Called via reflection based on naming convention.
@@ -1210,29 +1130,10 @@ object SCollectionMethods extends MethodsContainer with MethodByNameUnapply {
     }
   }
 
-  private val distinctCostKind = PerItemCost(baseCost = JitCost(60), perChunkCost = JitCost(5), chunkSize = 100)
-
-  val DistinctMethod = SMethod(this, "distinct",
-    SFunc(Array(ThisType), ThisType, paramIVSeq), 31, distinctCostKind)
-    .withIRInfo(MethodCallIrBuilder)
-    .withInfo(MethodCall, "Returns inversed collection.")
-
-  /** Implements evaluation of Coll.reverse method call ErgoTree node.
-    * Called via reflection based on naming convention.
-    * @see SMethod.evalMethod
-    */
-  def distinct_eval[A](mc: MethodCall, xs: Coll[A])
-                     (implicit E: ErgoTreeEvaluator): Coll[A] = {
-    val m = mc.method
-    E.addSeqCost(m.costKind.asInstanceOf[PerItemCost], xs.length, m.opDesc) { () =>
-      xs.distinct
-    }
-  }
-
   private val startsWithCostKind = Zip_CostKind
 
   val StartsWithMethod = SMethod(this, "startsWith",
-    SFunc(Array(ThisType, ThisType), SBoolean, paramIVSeq), 32, startsWithCostKind)
+    SFunc(Array(ThisType, ThisType), SBoolean, paramIVSeq), 31, startsWithCostKind)
     .withIRInfo(MethodCallIrBuilder)
     .withInfo(MethodCall, "Returns true if this collection starts with given one, false otherwise.",
       ArgInfo("prefix", "Collection to be checked for being a prefix of this collection."))
@@ -1252,7 +1153,7 @@ object SCollectionMethods extends MethodsContainer with MethodByNameUnapply {
   private val endsWithCostKind = Zip_CostKind
 
   val EndsWithMethod = SMethod(this, "endsWith",
-    SFunc(Array(ThisType, ThisType), SBoolean, paramIVSeq), 33, endsWithCostKind)
+    SFunc(Array(ThisType, ThisType), SBoolean, paramIVSeq), 32, endsWithCostKind)
     .withIRInfo(MethodCallIrBuilder)
     .withInfo(MethodCall, "Returns true if this collection ends with given one, false otherwise.",
       ArgInfo("suffix", "Collection to be checked for being a suffix of this collection."))
@@ -1270,7 +1171,7 @@ object SCollectionMethods extends MethodsContainer with MethodByNameUnapply {
   }
 
   val GetMethod = SMethod(this, "get",
-    SFunc(Array(ThisType, SInt), SOption(tIV), Array[STypeParam](tIV)), 34, ByIndex.costKind)
+    SFunc(Array(ThisType, SInt), SOption(tIV), Array[STypeParam](tIV)), 33, ByIndex.costKind)
     .withIRInfo(MethodCallIrBuilder)
     .withInfo(MethodCall,
               "Returns Some(element) if there is an element at given index, None otherwise.",
@@ -1299,7 +1200,6 @@ object SCollectionMethods extends MethodsContainer with MethodByNameUnapply {
 
   private val v6Methods = v5Methods ++ Seq(
     ReverseMethod,
-    DistinctMethod,
     StartsWithMethod,
     EndsWithMethod,
     GetMethod
@@ -1309,7 +1209,7 @@ object SCollectionMethods extends MethodsContainer with MethodByNameUnapply {
     * Typical override: `super.getMethods() ++ Seq(m1, m2, m3)`
     */
   override protected def getMethods(): Seq[SMethod] = {
-    if (VersionContext.current.isV6SoftForkActivated) {
+    if (VersionContext.current.isV3OrLaterErgoTreeVersion) {
       v6Methods
     } else {
       v5Methods
@@ -1417,7 +1317,7 @@ case object SBoxMethods extends MonoTypeMethods {
          | identifier followed by box index in the transaction outputs.
         """.stripMargin ) // see ExtractCreationInfo
 
-  lazy val getRegMethodV5 = SMethod(this, "getReg",
+  lazy val getRegMethodV5 = SMethod(this, "getRegV5",
     SFunc(Array(SBox, SInt), SOption(tT), Array(paramT)), 7, ExtractRegisterAs.costKind)
       .withInfo(ExtractRegisterAs,
         """ Extracts register by id and type.
@@ -1427,7 +1327,7 @@ case object SBoxMethods extends MonoTypeMethods {
         ArgInfo("regId", "zero-based identifier of the register."))
 
   lazy val getRegMethodV6 = SMethod(this, "getReg",
-    SFunc(Array(SBox, SInt), SOption(tT), Array(paramT)), 7, ExtractRegisterAs.costKind, Seq(tT))
+    SFunc(Array(SBox, SInt), SOption(tT), Array(paramT)), 19, ExtractRegisterAs.costKind, Seq(tT))
     .withIRInfo(MethodCallIrBuilder,
       javaMethodOf[Box, Int, RType[_]]("getReg"),
       { mtype => Array(mtype.tRange.asOption[SType].elemType) })
@@ -1449,12 +1349,11 @@ case object SBoxMethods extends MonoTypeMethods {
     BytesWithoutRefMethod, // see ExtractBytesWithNoRef
     IdMethod, // see ExtractId
     creationInfoMethod,
-    tokensMethod
+    tokensMethod,
+    getRegMethodV5
   ) ++ registers(8)
 
-  lazy val v5Methods = commonBoxMethods ++ Array(
-    getRegMethodV5
-  )
+  lazy val v5Methods = commonBoxMethods
 
   lazy val v6Methods = commonBoxMethods ++ Array(
     getRegMethodV6
@@ -1462,7 +1361,7 @@ case object SBoxMethods extends MonoTypeMethods {
 
   // should be lazy to solve recursive initialization
   protected override def getMethods() = {
-    if (VersionContext.current.isV6SoftForkActivated) {
+    if (VersionContext.current.isV3OrLaterErgoTreeVersion) {
       v6Methods
     } else {
       v5Methods
@@ -1759,23 +1658,63 @@ case object SAvlTreeMethods extends MonoTypeMethods {
     OperationCostInfo(m.costKind.asInstanceOf[FixedCost], m.opDesc)
   }
 
-  protected override def getMethods(): Seq[SMethod] = super.getMethods() ++ Seq(
-    digestMethod,
-    enabledOperationsMethod,
-    keyLengthMethod,
-    valueLengthOptMethod,
-    isInsertAllowedMethod,
-    isUpdateAllowedMethod,
-    isRemoveAllowedMethod,
-    updateOperationsMethod,
-    containsMethod,
-    getMethod,
-    getManyMethod,
-    insertMethod,
-    updateMethod,
-    removeMethod,
-    updateDigestMethod
-  )
+  // 6.0 methods below
+  lazy val insertOrUpdateMethod = SMethod(this, "insertOrUpdate",
+    SFunc(Array(SAvlTree, CollKeyValue, SByteArray), SAvlTreeOption), 16, DynamicCost)
+    .withIRInfo(MethodCallIrBuilder)
+    .withInfo(MethodCall,
+      """
+        |  /** Perform insertions or updates of key-value entries into this tree using proof `proof`.
+        |    * Throws exception if proof is incorrect
+        |    * Return Some(newTree) if successful
+        |    * Return None if operations were not performed.
+        |    *
+        |    * @note CAUTION! Pairs must be ordered the same way they were in insert ops before proof was generated.
+        |    * @param operations   collection of key-value pairs to insert or update in this authenticated dictionary.
+        |    * @param proof
+        |    */
+        |
+        """.stripMargin)
+
+  /** Implements evaluation of AvlTree.insertOrUpdate method call ErgoTree node.
+    * Called via reflection based on naming convention.
+    * @see SMethod.evalMethod
+    */
+  def insertOrUpdate_eval(mc: MethodCall, tree: AvlTree, entries: KeyValueColl, proof: Coll[Byte])
+                         (implicit E: ErgoTreeEvaluator): Option[AvlTree] = {
+    E.insertOrUpdate_eval(mc, tree, entries, proof)
+  }
+
+  lazy val v5Methods = {
+    super.getMethods() ++ Seq(
+      digestMethod,
+      enabledOperationsMethod,
+      keyLengthMethod,
+      valueLengthOptMethod,
+      isInsertAllowedMethod,
+      isUpdateAllowedMethod,
+      isRemoveAllowedMethod,
+      updateOperationsMethod,
+      containsMethod,
+      getMethod,
+      getManyMethod,
+      insertMethod,
+      updateMethod,
+      removeMethod,
+      updateDigestMethod
+    )
+  }
+
+  lazy val v6Methods = v5Methods ++ Seq(insertOrUpdateMethod)
+
+  protected override def getMethods(): Seq[SMethod] = {
+    if (VersionContext.current.isV3OrLaterErgoTreeVersion) {
+      v6Methods
+    } else {
+      v5Methods
+    }
+  }
+
 }
 
 /** Type descriptor of `Context` type of ErgoTree. */
@@ -1837,7 +1776,7 @@ case object SContextMethods extends MonoTypeMethods {
   )
 
   protected override def getMethods(): Seq[SMethod] = {
-    if (VersionContext.current.isV6SoftForkActivated) {
+    if (VersionContext.current.isV3OrLaterErgoTreeVersion) {
       v6Methods
     } else {
       v5Methods
@@ -1888,7 +1827,7 @@ case object SHeaderMethods extends MonoTypeMethods {
   private lazy val v6Methods = v5Methods ++ Seq(checkPowMethod)
 
   protected override def getMethods() = {
-    if (VersionContext.current.isV6SoftForkActivated) {
+    if (VersionContext.current.isV3OrLaterErgoTreeVersion) {
       v6Methods
     } else {
       v5Methods
@@ -1944,7 +1883,7 @@ case object SGlobalMethods extends MonoTypeMethods {
       ArgInfo("left", "left operand"), ArgInfo("right", "right operand"))
 
   lazy val powHitMethod = SMethod(
-    this, "powHit", SFunc(Array(SGlobal, SInt, SByteArray, SByteArray, SByteArray, SInt), SBigInt), methodId = 8,
+    this, "powHit", SFunc(Array(SGlobal, SInt, SByteArray, SByteArray, SByteArray, SInt), SUnsignedBigInt), methodId = 8,
     PowHitCostKind)
     .withIRInfo(MethodCallIrBuilder)
     .withInfo(MethodCall,
@@ -1957,13 +1896,13 @@ case object SGlobalMethods extends MonoTypeMethods {
     )
 
   def powHit_eval(mc: MethodCall, G: SigmaDslBuilder, k: Int, msg: Coll[Byte], nonce: Coll[Byte], h: Coll[Byte], N: Int)
-                 (implicit E: ErgoTreeEvaluator): BigInt = {
+                 (implicit E: ErgoTreeEvaluator): UnsignedBigInt = {
     val cost = PowHitCostKind.cost(k, msg, nonce, h)
     E.addCost(FixedCost(cost), powHitMethod.opDesc)
-    CBigInt(Autolykos2PowValidation.hitForVersion2ForMessageWithChecks(k, msg.toArray, nonce.toArray, h.toArray, N).bigInteger)
+    CUnsignedBigInt(Autolykos2PowValidation.hitForVersion2ForMessageWithChecks(k, msg.toArray, nonce.toArray, h.toArray, N).bigInteger)
   }
 
-  private val deserializeCostKind = PerItemCost(baseCost = JitCost(30), perChunkCost = JitCost(20), chunkSize = 32)
+  private val deserializeCostKind = PerItemCost(baseCost = JitCost(100), perChunkCost = JitCost(32), chunkSize = 32)
 
   lazy val deserializeToMethod = SMethod(
     this, "deserializeTo", SFunc(Array(SGlobal, SByteArray), tT, Array(paramT)), 4, deserializeCostKind, Seq(tT))
@@ -2061,7 +2000,7 @@ case object SGlobalMethods extends MonoTypeMethods {
     .withInfo(MethodCall, "Returns empty Option[T] of given type T.")
 
   protected override def getMethods() = super.getMethods() ++ {
-    if (VersionContext.current.isV6SoftForkActivated) {
+    if (VersionContext.current.isV3OrLaterErgoTreeVersion) {
       Seq(
         groupGeneratorMethod,
         xorMethod,

@@ -1208,6 +1208,13 @@ object AvlTree extends EntityObject("AvlTree") {
         true, false, element[WOption[AvlTree]]))
     }
 
+    override def insertOrUpdate(operations: Ref[Coll[(Coll[Byte], Coll[Byte])]], proof: Ref[Coll[Byte]]): Ref[WOption[AvlTree]] = {
+      asRep[WOption[AvlTree]](mkMethodCall(self,
+        AvlTreeClass.getMethod("insertOrUpdate", classOf[Sym], classOf[Sym]),
+        Array[AnyRef](operations, proof),
+        true, false, element[WOption[AvlTree]]))
+    }
+
     override def remove(operations: Ref[Coll[Coll[Byte]]], proof: Ref[Coll[Byte]]): Ref[WOption[AvlTree]] = {
       asRep[WOption[AvlTree]](mkMethodCall(self,
         AvlTreeClass.getMethod("remove", classOf[Sym], classOf[Sym]),
@@ -1332,6 +1339,13 @@ object AvlTree extends EntityObject("AvlTree") {
         true, true, element[WOption[AvlTree]]))
     }
 
+    def insertOrUpdate(operations: Ref[Coll[(Coll[Byte], Coll[Byte])]], proof: Ref[Coll[Byte]]): Ref[WOption[AvlTree]] = {
+      asRep[WOption[AvlTree]](mkMethodCall(source,
+        AvlTreeClass.getMethod("insertOrUpdate", classOf[Sym], classOf[Sym]),
+        Array[AnyRef](operations, proof),
+        true, true, element[WOption[AvlTree]]))
+    }
+
     def remove(operations: Ref[Coll[Coll[Byte]]], proof: Ref[Coll[Byte]]): Ref[WOption[AvlTree]] = {
       asRep[WOption[AvlTree]](mkMethodCall(source,
         AvlTreeClass.getMethod("remove", classOf[Sym], classOf[Sym]),
@@ -1355,7 +1369,7 @@ object AvlTree extends EntityObject("AvlTree") {
     override protected def collectMethods: Map[RMethod, MethodDesc] = {
       super.collectMethods ++
         Elem.declaredMethods(RClass(classOf[AvlTree]), RClass(classOf[SAvlTree]), Set(
-        "digest", "enabledOperations", "keyLength", "valueLengthOpt", "isInsertAllowed", "isUpdateAllowed", "isRemoveAllowed", "updateDigest", "updateOperations", "contains", "get", "getMany", "insert", "update", "remove"
+        "digest", "enabledOperations", "keyLength", "valueLengthOpt", "isInsertAllowed", "isUpdateAllowed", "isRemoveAllowed", "updateDigest", "updateOperations", "contains", "get", "getMany", "insert", "update", "insertOrUpdate", "remove"
         ))
     }
   }
@@ -2294,11 +2308,11 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
     }
 
 
-    override def powHit(k: Ref[Int], msg: Ref[Coll[Byte]], nonce: Ref[Coll[Byte]], h: Ref[Coll[Byte]], N: Ref[Int]): Ref[BigInt] = {
-      asRep[BigInt](mkMethodCall(self,
+    override def powHit(k: Ref[Int], msg: Ref[Coll[Byte]], nonce: Ref[Coll[Byte]], h: Ref[Coll[Byte]], N: Ref[Int]): Ref[UnsignedBigInt] = {
+      asRep[UnsignedBigInt](mkMethodCall(self,
         SigmaDslBuilderClass.getMethod("powHit", classOf[Sym], classOf[Sym], classOf[Sym], classOf[Sym], classOf[Sym]),
         Array[AnyRef](k, msg, nonce, h, N),
-        true, false, element[BigInt]))
+        true, false, element[UnsignedBigInt](UnsignedBigInt.unsignedBigIntElement)))
     }
 
     override def encodeNbits(bi: Ref[BigInt]): Ref[Long] = {
@@ -2474,11 +2488,11 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
         true, true, element[Coll[Byte]]))
     }
 
-    def powHit(k: Ref[Int], msg: Ref[Coll[Byte]], nonce: Ref[Coll[Byte]], h: Ref[Coll[Byte]], N: Ref[Int]): Ref[BigInt] = {
-      asRep[BigInt](mkMethodCall(source,
+    def powHit(k: Ref[Int], msg: Ref[Coll[Byte]], nonce: Ref[Coll[Byte]], h: Ref[Coll[Byte]], N: Ref[Int]): Ref[UnsignedBigInt] = {
+      asRep[UnsignedBigInt](mkMethodCall(source,
         SigmaDslBuilderClass.getMethod("powHit", classOf[Sym], classOf[Sym], classOf[Sym], classOf[Sym], classOf[Sym]),
         Array[AnyRef](k, msg, nonce, h, N),
-        true, true, element[BigInt]))
+        true, true, element[UnsignedBigInt](UnsignedBigInt.unsignedBigIntElement)))
     }
 
     def serialize[T](value: Ref[T]): Ref[Coll[Byte]] = {

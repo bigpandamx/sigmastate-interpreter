@@ -3174,11 +3174,6 @@ class LanguageSpecificationV5 extends LanguageSpecificationBase { suite =>
 
   type BatchProver = BatchAVLProver[Digest32, Blake2b256.type]
 
-  def performInsert(avlProver: BatchProver, key: Coll[Byte], value: Coll[Byte]) = {
-    avlProver.performOneOperation(Insert(ADKey @@ key.toArray, ADValue @@ value.toArray))
-    val proof = avlProver.generateProof().toColl
-    proof
-  }
 
   def performUpdate(avlProver: BatchProver, key: Coll[Byte], value: Coll[Byte]) = {
     avlProver.performOneOperation(Update(ADKey @@ key.toArray, ADValue @@ value.toArray))
@@ -3201,144 +3196,6 @@ class LanguageSpecificationV5 extends LanguageSpecificationBase { suite =>
   }
 
   type KV = (Coll[Byte], Coll[Byte])
-
-  property("AvlTree.insert equivalence") {
-    val insert = existingFeature((t: (AvlTree, (Coll[KV], Coll[Byte]))) => t._1.insert(t._2._1, t._2._2),
-      "{ (t: (AvlTree, (Coll[(Coll[Byte], Coll[Byte])], Coll[Byte]))) => t._1.insert(t._2._1, t._2._2) }",
-      FuncValue(
-        Vector(
-          (
-              1,
-              STuple(
-                Vector(
-                  SAvlTree,
-                  STuple(Vector(SCollectionType(STuple(Vector(SByteArray, SByteArray))), SByteArray))
-                )
-              )
-              )
-        ),
-        BlockValue(
-          Vector(
-            ValDef(
-              3,
-              List(),
-              SelectField.typed[Value[STuple]](
-                ValUse(
-                  1,
-                  STuple(
-                    Vector(
-                      SAvlTree,
-                      STuple(Vector(SCollectionType(STuple(Vector(SByteArray, SByteArray))), SByteArray))
-                    )
-                  )
-                ),
-                2.toByte
-              )
-            )
-          ),
-          MethodCall.typed[Value[SOption[SAvlTree.type]]](
-            SelectField.typed[Value[SAvlTree.type]](
-              ValUse(
-                1,
-                STuple(
-                  Vector(
-                    SAvlTree,
-                    STuple(Vector(SCollectionType(STuple(Vector(SByteArray, SByteArray))), SByteArray))
-                  )
-                )
-              ),
-              1.toByte
-            ),
-            SAvlTreeMethods.getMethodByName("insert"),
-            Vector(
-              SelectField.typed[Value[SCollection[STuple]]](
-                ValUse(
-                  3,
-                  STuple(Vector(SCollectionType(STuple(Vector(SByteArray, SByteArray))), SByteArray))
-                ),
-                1.toByte
-              ),
-              SelectField.typed[Value[SCollection[SByte.type]]](
-                ValUse(
-                  3,
-                  STuple(Vector(SCollectionType(STuple(Vector(SByteArray, SByteArray))), SByteArray))
-                ),
-                2.toByte
-              )
-            ),
-            Map()
-          )
-        )
-      ))
-
-    val testTraceBase = Array(
-      FixedCostItem(Apply),
-      FixedCostItem(FuncValue),
-      FixedCostItem(GetVar),
-      FixedCostItem(OptionGet),
-      FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
-      ast.SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 1),
-      FixedCostItem(ValUse),
-      FixedCostItem(SelectField),
-      FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
-      FixedCostItem(ValUse),
-      FixedCostItem(SelectField),
-      FixedCostItem(MethodCall),
-      FixedCostItem(ValUse),
-      FixedCostItem(SelectField),
-      FixedCostItem(ValUse),
-      FixedCostItem(SelectField),
-      FixedCostItem(SAvlTreeMethods.isInsertAllowedMethod, FixedCost(JitCost(15)))
-    )
-    val costDetails1 = TracedCost(testTraceBase)
-    val costDetails2 = TracedCost(
-      testTraceBase ++ Array(
-        ast.SeqCostItem(NamedDesc("CreateAvlVerifier"), PerItemCost(JitCost(110), JitCost(20), 64), 70),
-        ast.SeqCostItem(NamedDesc("InsertIntoAvlTree"), PerItemCost(JitCost(40), JitCost(10), 1), 1),
-        FixedCostItem(SAvlTreeMethods.updateDigestMethod, FixedCost(JitCost(40)))
-      )
-    )
-
-    forAll(keyCollGen, bytesCollGen) { (key, value) =>
-      val (tree, avlProver) = createAvlTreeAndProver()
-      val preInsertDigest = avlProver.digest.toColl
-      val insertProof = performInsert(avlProver, key, value)
-      val kvs = Colls.fromItems((key -> value))
-
-      { // positive
-        val preInsertTree = createTree(preInsertDigest, insertAllowed = true)
-        val input = (preInsertTree, (kvs, insertProof))
-        val (res, _) = insert.checkEquality(input).getOrThrow
-        res.isDefined shouldBe true
-        insert.checkExpected(input, Expected(Success(res), 1796, costDetails2, 1796, Seq.fill(4)(2102)))
-      }
-
-      { // negative: readonly tree
-        val readonlyTree = createTree(preInsertDigest)
-        val input = (readonlyTree, (kvs, insertProof))
-        val (res, _) = insert.checkEquality(input).getOrThrow
-        res.isDefined shouldBe false
-        insert.checkExpected(input, Expected(Success(res), 1772, costDetails1, 1772, Seq.fill(4)(2078)))
-      }
-
-      { // negative: invalid key
-        val tree = createTree(preInsertDigest, insertAllowed = true)
-        val invalidKey = key.map(x => (-x).toByte) // any other different from key
-        val invalidKvs = Colls.fromItems((invalidKey -> value)) // NOTE, insertProof is based on `key`
-        val input = (tree, (invalidKvs, insertProof))
-        val (res, _) = insert.checkEquality(input).getOrThrow
-        res.isDefined shouldBe true // TODO v6.0: should it really be true? (looks like a bug) (see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/908)
-        insert.checkExpected(input, Expected(Success(res), 1796, costDetails2, 1796, Seq.fill(4)(2102)))
-      }
-
-      { // negative: invalid proof
-        val tree = createTree(preInsertDigest, insertAllowed = true)
-        val invalidProof = insertProof.map(x => (-x).toByte) // any other different from proof
-        val res = insert.checkEquality((tree, (kvs, invalidProof)))
-        res.isFailure shouldBe true
-      }
-    }
-  }
 
   property("AvlTree.update equivalence") {
     val update = existingFeature((t: (AvlTree, (Coll[KV], Coll[Byte]))) => t._1.update(t._2._1, t._2._2),
@@ -4876,7 +4733,7 @@ class LanguageSpecificationV5 extends LanguageSpecificationBase { suite =>
             Vector(),
             Map()
           )
-        )),
+        ), activationType = ActivationByScriptVersion),
       preGeneratedSamples = Some(samples))
 
     // test vectors to reproduce v4.x bug (see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/603)
@@ -5136,6 +4993,7 @@ class LanguageSpecificationV5 extends LanguageSpecificationBase { suite =>
             )
           )
         ),
+        activationType = ActivationByScriptVersion,
         allowNewToSucceed = true
       ),
       preGeneratedSamples = Some(ArraySeq.empty))
@@ -6059,7 +5917,9 @@ class LanguageSpecificationV5 extends LanguageSpecificationBase { suite =>
         (x: Coll[Boolean]) => SigmaDsl.xorOf(x),
         (x: Coll[Boolean]) => SigmaDsl.xorOf(x),
         "{ (x: Coll[Boolean]) => xorOf(x) }",
-        FuncValue(Vector((1, SBooleanArray)), XorOf(ValUse(1, SBooleanArray)))))
+        FuncValue(Vector((1, SBooleanArray)), XorOf(ValUse(1, SBooleanArray))),
+        activationType = ActivationByScriptVersion
+      ))
   }
 
   property("LogicalNot equivalence") {
@@ -6334,7 +6194,7 @@ class LanguageSpecificationV5 extends LanguageSpecificationBase { suite =>
         (x: (Coll[Byte], Coll[Byte])) => SigmaDsl.xor(x._1, x._2),
         (x: (Coll[Byte], Coll[Byte])) => SigmaDsl.xor(x._1, x._2),
         "{ (x: (Coll[Byte], Coll[Byte])) => xor(x._1, x._2) }",
-        if (lowerMethodCallsInTests)
+        {if (lowerMethodCallsInTests)
           FuncValue(
             Vector((1, STuple(Vector(SByteArray, SByteArray)))),
             Xor(
@@ -6366,7 +6226,8 @@ class LanguageSpecificationV5 extends LanguageSpecificationBase { suite =>
               ),
               Map()
             )
-          )
+          )},
+        activationType = ActivationByScriptVersion
       ))
   }
 
@@ -7025,15 +6886,6 @@ class LanguageSpecificationV5 extends LanguageSpecificationBase { suite =>
       traceBase ++ Array(
         FixedCostItem(MethodCall),
         FixedCostItem(FuncValue),
-        ast.SeqCostItem(MethodDesc(SCollectionMethods.FlatMapMethod), PerItemCost(JitCost(60), JitCost(10), 8), 0)
-      )
-    )
-    val costDetails1 = TracedCost(
-      traceBase ++ Array(
-        FixedCostItem(MethodCall),
-        FixedCostItem(FuncValue),
-        FixedCostItem(NamedDesc("MatchSingleArgMethodCall"), FixedCost(JitCost(30))),
-        ast.SeqCostItem(NamedDesc("CheckFlatmapBody"), PerItemCost(JitCost(20), JitCost(20), 1), 1),
         ast.SeqCostItem(MethodDesc(SCollectionMethods.FlatMapMethod), PerItemCost(JitCost(60), JitCost(10), 8), 0)
       )
     )
@@ -8060,7 +7912,7 @@ class LanguageSpecificationV5 extends LanguageSpecificationBase { suite =>
           )
         )
     )
-    if(!VersionContext.current.isV6SoftForkActivated) {
+    if(!VersionContext.current.isV3OrLaterErgoTreeVersion) {
     verifyCases(
       // (coll, (index, default))
       {
@@ -8698,7 +8550,7 @@ class LanguageSpecificationV5 extends LanguageSpecificationBase { suite =>
         "{ (x: Option[Long]) => x.isDefined }",
         FuncValue(Vector((1, SOption(SLong))), OptionIsDefined(ValUse(1, SOption(SLong))))))
 
-        if (!VersionContext.current.isV6SoftForkActivated) {
+        if (!VersionContext.current.isV3OrLaterErgoTreeVersion) {
       verifyCases(
         Seq(
           (None -> Expected(Success(1L), 1766, costDetails3, 1766, Seq.fill(4)(2006))),
@@ -8965,6 +8817,7 @@ class LanguageSpecificationV5 extends LanguageSpecificationBase { suite =>
             LongConstant(5L)
           )
         ),
+        activationType = ActivationByScriptVersion,
         allowNewToSucceed = true),
       preGeneratedSamples = Some(Nil))
   }
@@ -9538,7 +9391,7 @@ class LanguageSpecificationV5 extends LanguageSpecificationBase { suite =>
             ),
             ConcreteCollection(Array(BoolToSigmaProp(FalseLeaf)), SSigmaProp)
           )
-        )))
+        ), activationType = ActivationByScriptVersion))
   }
 
   // Original issue: https://github.com/ScorexFoundation/sigmastate-interpreter/issues/604
@@ -9687,6 +9540,7 @@ class LanguageSpecificationV5 extends LanguageSpecificationBase { suite =>
               )
             )
           ),
+          activationType = ActivationByScriptVersion,
           allowDifferentErrors = true,
           allowNewToSucceed = true
         ),
@@ -9827,9 +9681,18 @@ class LanguageSpecificationV5 extends LanguageSpecificationBase { suite =>
   }
 
   override protected def afterAll(): Unit = {
-    printDebug(CErgoTreeEvaluator.DefaultProfiler.generateReport)
+    printDebug(CErgoTreeEvaluator.DefaultProfiler.generateReport())
     printDebug("==========================================================")
-    printDebug(Interpreter.verifySignatureProfiler.generateReport)
+    printDebug(Interpreter.verifySignatureProfiler.generateReport())
     printDebug("==========================================================")
+
+// Uncomment to print reflection metadata for missing classes and methods.
+// Make sure also:
+// - this.printDebugInfo is set to true
+// - Debug code in Platform.resolveClass is also uncommented
+// Note, ReflectionGenerator is only available on JVM, so the line below should be
+// commented back to run tests on JS.
+//    printDebug(ReflectionGenerator.generateReport())
+//    printDebug("==========================================================")
   }
 }
