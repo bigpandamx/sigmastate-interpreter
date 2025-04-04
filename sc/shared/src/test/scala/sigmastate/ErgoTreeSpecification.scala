@@ -555,7 +555,7 @@ class ErgoTreeSpecification extends SigmaDslTesting with ContractsTestkit with C
         MInfo(4, inputsMethod), MInfo(5, outputsMethod), MInfo(6, heightMethod),
         MInfo(7, selfMethod), MInfo(8, selfBoxIndexMethod), MInfo(9, lastBlockUtxoRootHashMethod),
         MInfo(10, minerPubKeyMethod), MInfo(11, getVarV5Method)
-      ) ++ (if(VersionContext.current.isV6SoftForkActivated){
+      ) ++ (if(VersionContext.current.isV3OrLaterErgoTreeVersion){
           Seq(MInfo(12, getVarFromInputMethod))
         } else {
           Seq.empty[MInfo]
