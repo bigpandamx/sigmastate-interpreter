@@ -730,18 +730,18 @@ object SOption extends STypeCompanion {
   type SAvlTreeOption        = SOption[SAvlTree.type]
 
   /** This descriptors are instantiated once here and then reused. */
-  implicit val SByteOption = SOption(SByte)
-  implicit val SByteArrayOption = SOption(SByteArray)
-  implicit val SShortOption = SOption(SShort)
-  implicit val SIntOption = SOption(SInt)
-  implicit val SLongOption = SOption(SLong)
-  implicit val SBigIntOption = SOption(SBigInt)
-  implicit val SUnsignedBigIntOption = SOption(SUnsignedBigInt)
-  implicit val SBooleanOption = SOption(SBoolean)
-  implicit val SAvlTreeOption = SOption(SAvlTree)
-  implicit val SGroupElementOption = SOption(SGroupElement)
-  implicit val SSigmaPropOption = SOption(SSigmaProp)
-  implicit val SBoxOption = SOption(SBox)
+  lazy val SByteOption = SOption(SByte)
+  lazy val SByteArrayOption = SOption(SByteArray)
+  lazy val SShortOption = SOption(SShort)
+  lazy val SIntOption = SOption(SInt)
+  lazy val SLongOption = SOption(SLong)
+  lazy val SBigIntOption = SOption(SBigInt)
+  lazy val SUnsignedBigIntOption = SOption(SUnsignedBigInt)
+  lazy val SBooleanOption = SOption(SBoolean)
+  lazy val SAvlTreeOption = SOption(SAvlTree)
+  lazy val SGroupElementOption = SOption(SGroupElement)
+  lazy val SSigmaPropOption = SOption(SSigmaProp)
+  lazy val SBoxOption = SOption(SBox)
 
   def apply[T <: SType](implicit elemType: T, ov: Overloaded1): SOption[T] = SOption(elemType)
 }

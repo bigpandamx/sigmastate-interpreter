@@ -1,5 +1,6 @@
 package sigma.serialization
 
+import scorex.util.encode.Base16
 import scorex.utils.Ints
 import sigma.VersionContext
 import sigma.ast.SCollection.SByteArray
@@ -164,4 +165,12 @@ class MethodCallSerializerSpecification extends SerializationSpecification {
       }
       )
   }
+
+  property("eq") {
+    println("sv: " + VersionContext.current.activatedVersion)
+    println("tv: " + VersionContext.current.ergoTreeVersion)
+    val bs = "10010400d801d601b2a5730000d1ed93c2a7c2720193e4dc640ae4c67201046402e4c67201050ee4c67201070ee4c67201060e"
+    println(ErgoTreeSerializer.DefaultSerializer.deserializeErgoTree(Base16.decode(bs).get))
+  }
+
 }
