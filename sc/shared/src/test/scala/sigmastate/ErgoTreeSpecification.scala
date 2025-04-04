@@ -11,7 +11,6 @@ import sigma.data.{Nullable, RType, TrivialProp}
 import sigma.validation.ValidationException
 import sigma.validation.ValidationRules.CheckTypeCode
 import ErgoTree.HeaderType
-import SCollectionMethods.checkValidFlatmap
 import sigma.ast.SBigIntMethods.{ToUnsigned, ToUnsignedMod}
 import sigma.ast.SUnsignedBigIntMethods.{ModInverseMethod, ModMethod, MultiplyModMethod, PlusModMethod, SubtractModMethod, ToSignedMethod}
 import sigmastate.eval.CProfiler
@@ -24,7 +23,7 @@ import sigma.eval.EvalSettings
 import sigma.exceptions.{CostLimitException, InterpreterException}
 import sigma.serialization.ErgoTreeSerializer.DefaultSerializer
 import sigmastate.{CrossVersionProps, Plus}
-import sigmastate.utils.Helpers.TryOps
+import sigmastate.utils.Helpers.{TryOps, decodeGroupElement}
 
 
 /** Regression tests with ErgoTree related test vectors.
@@ -316,7 +315,7 @@ class ErgoTreeSpecification extends SigmaDslTesting with ContractsTestkit with C
     */
   case class MInfo(methodId: Byte, method: SMethod, isResolvableFromIds: Boolean = true)
 
-  def isV6Activated = VersionContext.current.isV6SoftForkActivated
+  def isV6Activated = VersionContext.current.isV3OrLaterErgoTreeVersion
 
   // NOTE, the type code constants are checked above
   // The methodId codes as checked here, they MUST be PRESERVED.
@@ -476,7 +475,7 @@ class ErgoTreeSpecification extends SigmaDslTesting with ContractsTestkit with C
         MInfo(4, MultiplyMethod),
         MInfo(5, NegateMethod)
       ) ++ {
-        if(VersionContext.current.isV6SoftForkActivated) {
+        if(VersionContext.current.isV3OrLaterErgoTreeVersion) {
           Seq(MInfo(6, ExponentiateUnsignedMethod))
         } else {
           Seq.empty
@@ -497,11 +496,12 @@ class ErgoTreeSpecification extends SigmaDslTesting with ContractsTestkit with C
         MInfo(4, BytesWithoutRefMethod),
         MInfo(5, IdMethod),
         MInfo(6, creationInfoMethod),
+        MInfo(7, getRegMethodV5),
         MInfo(8, tokensMethod)
       ) ++ (if (isV6Activated) {
-        Seq(MInfo(7, getRegMethodV6))
+        Seq(MInfo(19, getRegMethodV6))
       } else {
-        Seq(MInfo(7, getRegMethodV5))
+        Seq()
       }) ++ registers(idOfs = 8)
         .zipWithIndex
         .map { case (m,i) => MInfo((8 + i + 1).toByte, m) }, true)
@@ -582,36 +582,15 @@ class ErgoTreeSpecification extends SigmaDslTesting with ContractsTestkit with C
         MInfo(8, FilterMethod),
         MInfo(9, AppendMethod),
         MInfo(10, ApplyMethod),
-        /* TODO soft-fork: https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
-        BitShiftLeftMethod,
-        BitShiftRightMethod,
-        BitShiftRightZeroedMethod,
-        */
         MInfo(14, IndicesMethod),
         MInfo(15, FlatMapMethod),
         MInfo(19, PatchMethod),
         MInfo(20, UpdatedMethod),
         MInfo(21, UpdateManyMethod),
-        /*TODO soft-fork: https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
-        UnionSetsMethod,
-        DiffMethod,
-        IntersectMethod,
-        PrefixLengthMethod,
-        */
         MInfo(26, IndexOfMethod),
-        /* TODO soft-fork: https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
-        LastIndexOfMethod,
-        FindMethod,
-        */
         MInfo(29, ZipMethod)
-        /* TODO soft-fork: https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
-        DistinctMethod,
-        StartsWithMethod,
-        EndsWithMethod,
-        MapReduceMethod,
-        */
       ) ++ (if (isV6Activated) {
-        Seq(MInfo(30, ReverseMethod), MInfo(31, DistinctMethod), MInfo(32, StartsWithMethod), MInfo(33, EndsWithMethod), MInfo(34, GetMethod))
+        Seq(MInfo(30, ReverseMethod), MInfo(31, StartsWithMethod), MInfo(32, EndsWithMethod), MInfo(33, GetMethod))
       } else Seq.empty), true)
     },
     { import SOptionMethods._
@@ -871,74 +850,6 @@ class ErgoTreeSpecification extends SigmaDslTesting with ContractsTestkit with C
 
       }
     }
-  }
-
-  property("checkValidFlatmap") {
-    implicit val E = CErgoTreeEvaluator.forProfiling(new CProfiler, evalSettings)
-    def mkLambda(t: SType, mkBody: SValue => SValue) = {
-      MethodCall(
-        ValUse(1, SCollectionType(t)),
-        SCollectionMethods.getMethodByName("flatMap").withConcreteTypes(
-          Map(STypeVar("IV") -> t, STypeVar("OV") -> SByte)
-        ),
-        Vector(FuncValue(Vector((3, t)), mkBody(ValUse(3, t)))),
-        Map()
-      )
-    }
-    val validLambdas = Seq[(SType, SValue => SValue)](
-      (SBox, x => ExtractScriptBytes(x.asBox)),
-      (SBox, x => ExtractId(x.asBox)),
-      (SBox, x => ExtractBytes(x.asBox)),
-      (SBox, x => ExtractBytesWithNoRef(x.asBox)),
-      (SSigmaProp, x => SigmaPropBytes(x.asSigmaProp)),
-      (SBox, x => MethodCall(x, SBoxMethods.getMethodByName("id"), Vector(), Map()))
-    ).map { case (t, f) => mkLambda(t, f) }
-
-    validLambdas.foreach { l =>
-      checkValidFlatmap(l)
-    }
-
-    val invalidLambdas = Seq[(SType, SValue => SValue)](
-      // identity lambda `xss.flatMap(xs => xs)`
-      (SByteArray, x => x),
-
-      // identity lambda `xss.flatMap(xs => xs ++ xs)`
-      (SByteArray, x => Append(x.asCollection[SByte.type], x.asCollection[SByte.type]))
-    ).map { case (t, f) => mkLambda(t, f) } ++
-      Seq(
-        // invalid MC like `boxes.flatMap(b => b.id, 10)`
-        MethodCall(
-          ValUse(1, SBox),
-          SCollectionMethods.getMethodByName("flatMap").withConcreteTypes(
-            Map(STypeVar("IV") -> SBox, STypeVar("OV") -> SByte)
-          ),
-          Vector(
-            FuncValue(Vector((3, SBox)), ExtractId(ValUse(3, SBox))),
-            IntConstant(10) // too much arguments
-          ),
-          Map()
-        ),
-        // invalid MC like `boxes.flatMap((b,_) => b.id)`
-        MethodCall(
-          ValUse(1, SBox),
-          SCollectionMethods.getMethodByName("flatMap").withConcreteTypes(
-            Map(STypeVar("IV") -> SBox, STypeVar("OV") -> SByte)
-          ),
-          Vector(
-            FuncValue(Vector((3, SBox), (4, SInt)/*too much arguments*/), ExtractId(ValUse(3, SBox)))
-          ),
-          Map()
-        )
-      )
-
-    invalidLambdas.foreach { l =>
-      assertExceptionThrown(
-        checkValidFlatmap(l),
-        exceptionLike[RuntimeException](
-          s"Unsupported lambda in flatMap: allowed usage `xs.flatMap(x => x.property)`")
-      )
-    }
-
   }
 
   // Test vectors for https://github.com/ScorexFoundation/sigmastate-interpreter/issues/828

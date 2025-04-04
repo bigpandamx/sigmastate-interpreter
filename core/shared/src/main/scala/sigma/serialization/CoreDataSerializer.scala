@@ -4,7 +4,7 @@ import debox.cfor
 import sigma.ast._
 import sigma.crypto.BigIntegers
 import sigma.data._
-import sigma.util.Extensions.{BigIntOps, CoreAvlTreeOps, GroupElementOps, SigmaPropOps}
+import sigma.util.Extensions.{BigIntOps, BigIntegerOps, CoreAvlTreeOps, GroupElementOps, SigmaPropOps}
 import sigma.validation.ValidationRules.CheckSerializableTypeCode
 import sigma.{Evaluation, _}
 
@@ -31,10 +31,12 @@ class CoreDataSerializer {
       w.putUInt(bytes.length)
       w.putBytes(bytes)
     case SBigInt =>
-      val data = v.asInstanceOf[BigInt].toBigInteger.toByteArray
+      val bi = v.asInstanceOf[BigInt].toBigInteger
+      require(bi.fitsIn256Bits, s"BigInt value $bi doesn't fit into 256 bits")
+      val data = bi.toByteArray
       w.putUShort(data.length)
       w.putBytes(data)
-    case SUnsignedBigInt if VersionContext.current.isV6SoftForkActivated =>
+    case SUnsignedBigInt if VersionContext.current.isV3OrLaterErgoTreeVersion =>
       val data = BigIntegers.asUnsignedByteArray(v.asInstanceOf[CUnsignedBigInt].wrappedValue)
       w.putUShort(data.length)
       w.putBytes(data)
@@ -73,7 +75,7 @@ class CoreDataSerializer {
         i += 1
       }
 
-    case SOption(elemType) if VersionContext.current.isV6SoftForkActivated =>
+    case SOption(elemType) if VersionContext.current.isV3OrLaterErgoTreeVersion =>
       val o = v.asInstanceOf[Option[elemType.WrappedType]]
       w.putOption(o){case (w, v) =>
         serialize(v, elemType, w)
@@ -113,7 +115,7 @@ class CoreDataSerializer {
         }
         val valueBytes = r.getBytes(size)
         CBigInt(new BigInteger(valueBytes))
-      case SUnsignedBigInt if VersionContext.current.isV6SoftForkActivated =>
+      case SUnsignedBigInt if VersionContext.current.isV3OrLaterErgoTreeVersion =>
         val size: Short = r.getUShort().toShort
         if (size > SBigInt.MaxSizeInBytes) {
           throw SerializerException(s"BigInt value doesn't not fit into ${SBigInt.MaxSizeInBytes} bytes: $size")
@@ -135,7 +137,7 @@ class CoreDataSerializer {
         }.toArray[Any]
         val coll = Colls.fromArray(arr)(sigma.AnyType)
         Evaluation.toDslTuple(coll, tuple)
-      case tOption: SOption[_] if VersionContext.current.isV6SoftForkActivated =>
+      case tOption: SOption[_] if VersionContext.current.isV3OrLaterErgoTreeVersion =>
         r.getOption[tOption.ElemWrappedType] {
           deserialize(tOption.elemType, r).asInstanceOf[tOption.ElemWrappedType]
         }
