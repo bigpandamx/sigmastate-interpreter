@@ -1,7 +1,7 @@
 package org.ergoplatform.validation
 
-import sigma.SigmaException
-import sigma.ast.{DeserializeContext, ErgoTree, MethodsContainer, SMethod}
+import sigma.{SigmaException, VersionContext}
+import sigma.ast._
 import sigma.ast.TypeCodes.LastConstantCode
 import sigma.serialization.{InvalidOpCode, SerializerException}
 import sigma.util.Extensions.toUByte
