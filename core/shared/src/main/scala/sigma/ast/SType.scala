@@ -114,18 +114,28 @@ object SType {
   /** All pre-defined types should be listed here. Note, NoType is not listed.
     * Should be in sync with sigmastate.lang.Types.predefTypes. */
   def allPredefTypes: Seq[SType] = {
-    if(VersionContext.current.isV6SoftForkActivated) {
+    if(VersionContext.current.isV3OrLaterErgoTreeVersion) {
       v6PredefTypes
     } else {
       v5PredefTypes
     }
   }
 
+  private val v5Types = Seq(
+    SBoolean, SString, STuple, SGroupElement, SSigmaProp, SContext, SGlobal, SHeader, SPreHeader,
+    SAvlTree, SBox, SOption, SCollection, SBigInt
+  )
+  private val v6Types = v5Types ++ Seq(SByte, SShort, SInt, SLong, SUnsignedBigInt)
+
+  private val v5TypesMap = v5Types.map { t => (t.typeId, t) }.toMap
+
+  private val v6TypesMap = v6Types.map { t => (t.typeId, t) }.toMap
+
   /** A mapping of object types supporting MethodCall operations. For each serialized
     * typeId this map contains a companion object which can be used to access the list of
     * corresponding methods.
     *
-    * @note starting from v6.0 methods with type parameters are also supported.
+    * @note starting from v6.0 ErgoTrees methods with type parameters are also supported.
     *
     * @note on versioning:
     * In v3.x-5.x SNumericType.typeId is silently shadowed by SGlobal.typeId as part of
@@ -140,7 +150,7 @@ object SType {
     * via lowering to Downcast, Upcast opcodes and the remaining `toBytes`, `toBits`
     * methods are not implemented at all.
     *
-    * Starting from v6.0 the SNumericType.typeId is demoted as a receiver object of
+    * Starting from v6.0 ErgoTrees the SNumericType.typeId is demoted as a receiver object of
     * method calls and:
     * 1) numeric type SByte, SShort, SInt, SLong are promoted as receivers and added to
     * the _types map.
@@ -148,23 +158,13 @@ object SType {
     * (SByte, SShort, SInt, SLong, SBigInt) and the generic tNum type parameter is
     * specialized accordingly.
     *
-    * Also, SUnsignedBigInt type is added in v6.0.
+    * Also, SUnsignedBigInt type is added in v6.0 ErgoTree.
     *
     * This difference in behaviour is tested by `property("MethodCall on numerics")`.
     *
     * The regression tests in `property("MethodCall Codes")` should pass.
     */
-  private val v5Types = Seq(
-    SBoolean, SString, STuple, SGroupElement, SSigmaProp, SContext, SGlobal, SHeader, SPreHeader,
-    SAvlTree, SBox, SOption, SCollection, SBigInt
-  )
-  private val v6Types = v5Types ++ Seq(SByte, SShort, SInt, SLong, SUnsignedBigInt)
-
-  private val v5TypesMap = v5Types.map { t => (t.typeId, t) }.toMap
-
-  private val v6TypesMap = v6Types.map { t => (t.typeId, t) }.toMap
-
-  def types: Map[Byte, STypeCompanion] = if (VersionContext.current.isV6SoftForkActivated) {
+  def types: Map[Byte, STypeCompanion] = if (VersionContext.current.isV3OrLaterErgoTreeVersion) {
     v6TypesMap
   } else {
     v5TypesMap
@@ -191,7 +191,7 @@ object SType {
     case SInt => x.isInstanceOf[Int]
     case SLong => x.isInstanceOf[Long]
     case SBigInt => x.isInstanceOf[BigInt]
-    case SUnsignedBigInt if VersionContext.current.isV6SoftForkActivated => x.isInstanceOf[UnsignedBigInt]
+    case SUnsignedBigInt if VersionContext.current.isV3OrLaterErgoTreeVersion => x.isInstanceOf[UnsignedBigInt]
     case SGroupElement => x.isInstanceOf[GroupElement]
     case SSigmaProp => x.isInstanceOf[SigmaProp]
     case SBox => x.isInstanceOf[Box]
@@ -409,8 +409,8 @@ case object SByte extends SPrimType with SEmbeddable with SNumericType with SMon
     case s: Short => s.toByteExact
     case i: Int => i.toByteExact
     case l: Long => l.toByteExact
-    case bi: BigInt if VersionContext.current.isV6SoftForkActivated => bi.toByte // toByteExact from int is called under the hood
-    case ubi: UnsignedBigInt if VersionContext.current.isV6SoftForkActivated => ubi.toByte // toByteExact from int is called under the hood
+    case bi: BigInt if VersionContext.current.isV3OrLaterErgoTreeVersion => bi.toByte // toByteExact from int is called under the hood
+    case ubi: UnsignedBigInt if VersionContext.current.isV3OrLaterErgoTreeVersion => ubi.toByte // toByteExact from int is called under the hood
     case _ => sys.error(s"Cannot downcast value $v to the type $this")
   }
 }
@@ -432,8 +432,8 @@ case object SShort extends SPrimType with SEmbeddable with SNumericType with SMo
     case s: Short => s
     case i: Int => i.toShortExact
     case l: Long => l.toShortExact
-    case bi: BigInt if VersionContext.current.isV6SoftForkActivated => bi.toShort // toShortExact from int is called under the hood
-    case ubi: UnsignedBigInt if VersionContext.current.isV6SoftForkActivated => ubi.toShort // toShortExact from int is called under the hood
+    case bi: BigInt if VersionContext.current.isV3OrLaterErgoTreeVersion => bi.toShort // toShortExact from int is called under the hood
+    case ubi: UnsignedBigInt if VersionContext.current.isV3OrLaterErgoTreeVersion => ubi.toShort // toShortExact from int is called under the hood
     case _ => sys.error(s"Cannot downcast value $v to the type $this")
   }
 }
@@ -457,8 +457,8 @@ case object SInt extends SPrimType with SEmbeddable with SNumericType with SMono
     case s: Short => s.toInt
     case i: Int => i
     case l: Long => l.toIntExact
-    case bi: BigInt if VersionContext.current.isV6SoftForkActivated => bi.toInt
-    case ubi: UnsignedBigInt if VersionContext.current.isV6SoftForkActivated => ubi.toInt
+    case bi: BigInt if VersionContext.current.isV3OrLaterErgoTreeVersion => bi.toInt
+    case ubi: UnsignedBigInt if VersionContext.current.isV3OrLaterErgoTreeVersion => ubi.toInt
     case _ => sys.error(s"Cannot downcast value $v to the type $this")
   }
 }
@@ -484,8 +484,8 @@ case object SLong extends SPrimType with SEmbeddable with SNumericType with SMon
     case s: Short => s.toLong
     case i: Int => i.toLong
     case l: Long => l
-    case bi: BigInt if VersionContext.current.isV6SoftForkActivated => bi.toLong
-    case ubi: UnsignedBigInt if VersionContext.current.isV6SoftForkActivated => ubi.toLong
+    case bi: BigInt if VersionContext.current.isV3OrLaterErgoTreeVersion => bi.toLong
+    case ubi: UnsignedBigInt if VersionContext.current.isV3OrLaterErgoTreeVersion => ubi.toLong
     case _ => sys.error(s"Cannot downcast value $v to the type $this")
   }
 }
@@ -512,7 +512,7 @@ case object SBigInt extends SPrimType with SEmbeddable with SNumericType with SM
       case x: Short => CBigInt(BigInteger.valueOf(x.toLong))
       case x: Int => CBigInt(BigInteger.valueOf(x.toLong))
       case x: Long => CBigInt(BigInteger.valueOf(x))
-      case x: BigInt if VersionContext.current.isV6SoftForkActivated => x
+      case x: BigInt if VersionContext.current.isV3OrLaterErgoTreeVersion => x
       case _ => sys.error(s"Cannot upcast value $v to the type $this")
     }
   }
@@ -524,7 +524,7 @@ case object SBigInt extends SPrimType with SEmbeddable with SNumericType with SM
       case x: Short => CBigInt(BigInteger.valueOf(x.toLong))
       case x: Int => CBigInt(BigInteger.valueOf(x.toLong))
       case x: Long => CBigInt(BigInteger.valueOf(x))
-      case x: BigInt if VersionContext.current.isV6SoftForkActivated => x
+      case x: BigInt if VersionContext.current.isV3OrLaterErgoTreeVersion => x
       case _ => sys.error(s"Cannot downcast value $v to the type $this")
     }
   }

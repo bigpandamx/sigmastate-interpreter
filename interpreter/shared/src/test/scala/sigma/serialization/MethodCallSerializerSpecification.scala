@@ -39,7 +39,7 @@ class MethodCallSerializerSpecification extends SerializationSpecification {
       roundTripTest(expr)
     }
 
-    VersionContext.withVersions(VersionContext.V6SoftForkVersion, 1) {
+    VersionContext.withVersions(VersionContext.V6SoftForkVersion, VersionContext.V6SoftForkVersion) {
       code
     }
 
@@ -48,6 +48,12 @@ class MethodCallSerializerSpecification extends SerializationSpecification {
         code
       }
       )
+
+    a[sigma.serialization.SerializerException] should be thrownBy (
+      VersionContext.withVersions(VersionContext.V6SoftForkVersion, (VersionContext.V6SoftForkVersion - 1).toByte) {
+        code
+      }
+    )
   }
 
   property("MethodCall deserialization round trip for Global.powHit") {
@@ -66,12 +72,18 @@ class MethodCallSerializerSpecification extends SerializationSpecification {
       roundTripTest(expr)
     }
 
-    VersionContext.withVersions(VersionContext.V6SoftForkVersion, 1) {
+    VersionContext.withVersions(VersionContext.V6SoftForkVersion, VersionContext.V6SoftForkVersion) {
       code
     }
 
-    an[ValidationException] should be thrownBy (
+    a[ValidationException] should be thrownBy (
       VersionContext.withVersions((VersionContext.V6SoftForkVersion - 1).toByte, 1) {
+        code
+      }
+      )
+
+    a[ValidationException] should be thrownBy (
+      VersionContext.withVersions(VersionContext.V6SoftForkVersion, (VersionContext.V6SoftForkVersion - 1).toByte) {
         code
       }
       )
@@ -88,15 +100,21 @@ class MethodCallSerializerSpecification extends SerializationSpecification {
       roundTripTest(expr)
     }
 
-    VersionContext.withVersions(VersionContext.V6SoftForkVersion, 1) {
+    VersionContext.withVersions(VersionContext.V6SoftForkVersion, VersionContext.V6SoftForkVersion) {
       code
     }
 
-    an[ValidationException] should be thrownBy (
+    a[ValidationException] should be thrownBy (
       VersionContext.withVersions((VersionContext.V6SoftForkVersion - 1).toByte, 1) {
         code
       }
-    )
+      )
+
+    a[ValidationException] should be thrownBy (
+      VersionContext.withVersions(VersionContext.V6SoftForkVersion, (VersionContext.V6SoftForkVersion - 1).toByte) {
+        code
+      }
+      )
   }
 
   property("MethodCall deserialization round trip for Global.deserializeTo[]") {
@@ -110,16 +128,21 @@ class MethodCallSerializerSpecification extends SerializationSpecification {
       roundTripTest(expr)
     }
 
-    println(SGlobalMethods.deserializeToMethod.hasExplicitTypeArgs)
-
-    VersionContext.withVersions(VersionContext.V6SoftForkVersion, 1) {
+    VersionContext.withVersions(VersionContext.V6SoftForkVersion, VersionContext.V6SoftForkVersion) {
       code
     }
 
-    an[Exception] should be thrownBy (
+    a[SerializerException] should be thrownBy (
       VersionContext.withVersions((VersionContext.V6SoftForkVersion - 1).toByte, 1) {
         code
-      })
+      }
+      )
+
+    a[sigma.serialization.SerializerException] should be thrownBy (
+      VersionContext.withVersions(VersionContext.V6SoftForkVersion, (VersionContext.V6SoftForkVersion - 1).toByte) {
+        code
+      }
+      )
   }
 
   property("MethodCall deserialization round trip for Global.encodeNBits") {
@@ -134,14 +157,21 @@ class MethodCallSerializerSpecification extends SerializationSpecification {
     }
 
     // should be ok
-    VersionContext.withVersions(VersionContext.V6SoftForkVersion, 1) {
+    VersionContext.withVersions(VersionContext.V6SoftForkVersion, VersionContext.V6SoftForkVersion) {
       code
     }
 
-    an[ValidationException] should be thrownBy (
+    a[ValidationException] should be thrownBy (
       VersionContext.withVersions((VersionContext.V6SoftForkVersion - 1).toByte, 1) {
         code
-      })
+      }
+      )
+
+    a[ValidationException] should be thrownBy (
+      VersionContext.withVersions(VersionContext.V6SoftForkVersion, (VersionContext.V6SoftForkVersion - 1).toByte) {
+        code
+      }
+      )
   }
 
   property("MethodCall deserialization round trip for Global.decodeNBits") {
@@ -155,12 +185,18 @@ class MethodCallSerializerSpecification extends SerializationSpecification {
       roundTripTest(expr)
     }
 
-    VersionContext.withVersions(VersionContext.V6SoftForkVersion, 1) {
+    VersionContext.withVersions(VersionContext.V6SoftForkVersion, VersionContext.V6SoftForkVersion) {
       code
     }
 
-    an[ValidationException] should be thrownBy (
+    a[ValidationException] should be thrownBy (
       VersionContext.withVersions((VersionContext.V6SoftForkVersion - 1).toByte, 1) {
+        code
+      }
+      )
+
+    a[ValidationException] should be thrownBy (
+      VersionContext.withVersions(VersionContext.V6SoftForkVersion, (VersionContext.V6SoftForkVersion - 1).toByte) {
         code
       }
       )

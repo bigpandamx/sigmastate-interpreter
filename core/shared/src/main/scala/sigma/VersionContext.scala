@@ -22,9 +22,14 @@ case class VersionContext(activatedVersion: Byte, ergoTreeVersion: Byte) {
    * greater than v1. */
   def isJitActivated: Boolean = activatedVersion >= JitActivationVersion
 
+  /** @return true if tree version is corresponding to 6.0
+    */
+  def isV3OrLaterErgoTreeVersion: Boolean = ergoTreeVersion >= V6SoftForkVersion
+
   /** @return true, if the activated script version of Ergo protocol on the network is
-   * including v6.0 update. */
-  def isV6SoftForkActivated: Boolean = activatedVersion >= V6SoftForkVersion
+    * including v6.0 update. */
+  def isV6Activated: Boolean = activatedVersion >= V6SoftForkVersion
+
 }
 
 object VersionContext {
