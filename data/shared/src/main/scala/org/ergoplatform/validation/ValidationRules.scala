@@ -162,7 +162,6 @@ object ValidationRules {
     override protected def settings: SigmaValidationSettings = currentSettings
   }
 
-  // todo: recheck id after merge
   object CheckV6Type extends ValidationRule(1019,
     "Check the type has the declared method.") {
     override protected lazy val settings: SigmaValidationSettings = currentSettings

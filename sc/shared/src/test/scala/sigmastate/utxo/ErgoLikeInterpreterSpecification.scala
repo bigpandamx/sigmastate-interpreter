@@ -766,8 +766,12 @@ class ErgoLikeInterpreterSpecification extends CompilerTestingCommons
   property("DeserializeContext can return expression of UnsignedBigInt type in 6.0") {
     def prove(ergoTree: ErgoTree, script: VarBinding) = {
       val boxToSpend = testBox(10, ergoTree, creationHeight = 5)
-      val updVs = ValidationRules.coreSettings.updated(1007.toShort, ReplacedRule(1017.toShort))
-      val ctx = ErgoLikeContextTesting.dummy(boxToSpend, 2)
+      val updVs = if (VersionContext.current.isV6Activated) {
+        ValidationRules.coreSettings
+      } else {
+        ValidationRules.coreSettings.updated(1007.toShort, ReplacedRule(1017.toShort))
+      }
+      val ctx = ErgoLikeContextTesting.dummy(boxToSpend, 3)
         .withExtension(
           ContextExtension(Seq(script).toMap)) // provide script bytes in context variable
         .withValidationSettings(updVs)
@@ -777,9 +781,9 @@ class ErgoLikeInterpreterSpecification extends CompilerTestingCommons
     }
 
     val script = """{unsignedBigInt("0")}"""
-    val scriptProp = VersionContext.withVersions(3,2){compile(Map.empty, script)}  // of Int type
-    val scriptBytes = VersionContext.withVersions(3,2){ValueSerializer.serialize(scriptProp)}
-    val tree = VersionContext.withVersions(3,2){ErgoTree.fromProposition(ErgoTree.defaultHeaderWithVersion(2),
+    val scriptProp = VersionContext.withVersions(3,3){compile(Map.empty, script)}  // of Int type
+    val scriptBytes = VersionContext.withVersions(3,3){ValueSerializer.serialize(scriptProp)}
+    val tree = VersionContext.withVersions(3,3){ErgoTree.fromProposition(ErgoTree.defaultHeaderWithVersion(3),
       EQ(DeserializeContext(1, SUnsignedBigInt), UnsignedBigIntConstant(new BigInteger("0"))).toSigmaProp)}
     prove(tree, script = 1.toByte -> ByteArrayConstant(scriptBytes))
   }
