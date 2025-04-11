@@ -466,6 +466,22 @@ class DeserializationResilience extends DeserializationResilienceTesting {
       a[sigma.validation.ValidationException] should be thrownBy ErgoBoxCandidate.serializer.fromBytes(bs)
     }
 
+    val reader = new SigmaByteReader(new VLQByteBufferReader(ByteBuffer.wrap(decodeBytes("5402030209050a050105").toArray)), new ConstantStore(), false)
+    val v = VersionContext.withVersions(3, 3) {ConstantSerializer(DeserializationSigmaBuilder).parse(reader).asInstanceOf[Constant[STuple]] }
+    val b6 = new ErgoBoxCandidate(1L, trueProp, 1,
+      additionalRegisters = Map(R4 -> v))
+    VersionContext.withVersions(3, 3) {
+      val bs6 = ErgoBoxCandidate.serializer.toBytes(b6)
+      a[sigma.validation.ValidationException] should be thrownBy ErgoBoxCandidate.serializer.fromBytes(bs6)
+    }
+
+    val b7 = new ErgoBoxCandidate(1L, trueProp, 1,
+      additionalRegisters = Map(R4 -> ConcreteCollection(Seq(Tuple(IntConstant(1), UnsignedBigIntConstant(new BigInteger("1")))), STuple(SInt, SUnsignedBigInt))))
+    VersionContext.withVersions(3, 3) {
+      val bs = ErgoBoxCandidate.serializer.toBytes(b7)
+      a[sigma.validation.ValidationException] should be thrownBy ErgoBoxCandidate.serializer.fromBytes(bs)
+    }
+
   }
 
 }
