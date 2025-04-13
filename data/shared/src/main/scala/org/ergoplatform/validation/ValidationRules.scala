@@ -182,6 +182,7 @@ object ValidationRules {
       def step(s: SType): Unit = {
         s match {
           case st: STuple => st.items.foreach(step)
+          case sc: SCollection[_] => step(sc.elemType)  // this case should be after STuple as STuple deriving from SCollection
           case s: SType => v6TypeCheck(s)
         }
       }
