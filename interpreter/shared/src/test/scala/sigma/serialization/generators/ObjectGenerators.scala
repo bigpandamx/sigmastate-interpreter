@@ -26,7 +26,7 @@ import sigma.util.Extensions.EcpOps
 import sigma.validation.{ChangedRule, DisabledRule, EnabledRule, ReplacedRule, RuleStatus}
 import sigma.validation.ValidationRules.FirstRuleId
 import ErgoTree.ZeroHeader
-import sigma.data.{AvlTreeData, AvlTreeFlags, CAND, CBox, CHeader, COR, CTHRESHOLD, Digest32Coll, ProveDHTuple, ProveDlog, RType, SigmaBoolean}
+import sigma.data.{AvlTreeData, AvlTreeFlags, CAND, CBigInt, CBox, CHeader, COR, CTHRESHOLD, Digest32Coll, ProveDHTuple, ProveDlog, RType, SigmaBoolean}
 import sigma.eval.Extensions.{EvalIterableOps, SigmaBooleanOps}
 import sigma.eval.SigmaDsl
 import sigma.interpreter.{ContextExtension, ProverResult}
@@ -81,7 +81,7 @@ trait ObjectGenerators extends TypeGenerators
   implicit lazy val arbProveDlog     : Arbitrary[ProveDlog]      = Arbitrary(proveDlogGen)
   implicit lazy val arbProveDHT: Arbitrary[ProveDHTuple] = Arbitrary(proveDHTGen)
   implicit lazy val arbRegisterIdentifier: Arbitrary[RegisterId] = Arbitrary(registerIdentifierGen)
-  implicit lazy val arbBigInteger: Arbitrary[BigInteger] = Arbitrary(Arbitrary.arbBigInt.arbitrary.map(_.bigInteger))
+  implicit lazy val arbBigInteger: Arbitrary[BigInteger] = Arbitrary(Arbitrary.arbBigInt.arbitrary.map(_.bigInteger).map(_.mod(CBigInt.MaxValue)))
   implicit lazy val arbBigInt: Arbitrary[BigInt] = Arbitrary(arbBigInteger.arbitrary.map(SigmaDsl.BigInt(_)))
   implicit lazy val arbUnsignedBigInt: Arbitrary[UnsignedBigInt] = Arbitrary(arbBigInteger.arbitrary.map(_.abs()).map(SigmaDsl.UnsignedBigInt(_)))
   implicit lazy val arbEcPointType: Arbitrary[dlogGroup.ElemType] = Arbitrary(Gen.const(()).flatMap(_ => CryptoConstants.dlogGroup.createRandomGenerator()))
