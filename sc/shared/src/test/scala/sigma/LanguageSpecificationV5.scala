@@ -16,6 +16,7 @@ import sigma.ast.ErgoTree.{HeaderType, ZeroHeader}
 import sigma.ast.SCollection._
 import sigma.ast.syntax._
 import sigma.ast.{Apply, MethodCall, PropertyCall, _}
+import sigma.crypto.SecP256K1Group
 import sigma.data.OrderingOps._
 import sigma.data.RType._
 import sigma.data._
@@ -2022,7 +2023,7 @@ class LanguageSpecificationV5 extends LanguageSpecificationBase { suite =>
       (BigIntMaxValue, BigIntMinValue) -> expect(false),
       (BigIntMaxValue, -47.toBigInt) -> expect(false),
       (BigIntMaxValue, BigIntMaxValue) -> expect(false),
-      (BigIntMaxValue, BigIntOverlimit) -> expect(true),  // TODO v6.0: reject this overlimit cases (see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/554)
+      (BigIntMaxValue, BigIntOverlimit) -> expect(true),
       (BigIntOverlimit, BigIntOverlimit) -> expect(false)
     )
 
@@ -2039,10 +2040,11 @@ class LanguageSpecificationV5 extends LanguageSpecificationBase { suite =>
 
   property("BigInt LE, GE") {
     val o = NumericOps.BigIntIsExactOrdering
-    // TODO v6.0: this values have bitCount == 255 (see to256BitValueExact) (see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/554)
     val BigIntMinValue = CBigInt(new BigInteger("-7F" + "ff" * 31, 16))
     val BigIntMaxValue = CBigInt(new BigInteger("7F" + "ff" * 31, 16))
-    val BigIntOverlimit = CBigInt(new BigInteger("7F" + "ff" * 33, 16))
+    val BigIntOverlimit = VersionContext.withVersions(2,2) {
+      CBigInt(new BigInteger("7F" + "ff" * 33, 16))
+    }
 
     def expect(v: Boolean) = Expected(Success(v), 1768, binaryRelationCostDetails(LE, SBigInt), 1768, Seq.fill(4)(2012))
     val LE_cases: Seq[((BigInt, BigInt), Expected[Boolean])] = Seq(
@@ -2081,7 +2083,7 @@ class LanguageSpecificationV5 extends LanguageSpecificationBase { suite =>
       (BigIntMaxValue, BigIntMinValue) -> expect(false),
       (BigIntMaxValue, -47.toBigInt) -> expect(false),
       (BigIntMaxValue, BigIntMaxValue) -> expect(true),
-      (BigIntMaxValue, BigIntOverlimit) -> expect(true), // TODO v6.0: reject this overlimit cases (see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/554)
+      (BigIntMaxValue, BigIntOverlimit) -> expect(true),
       (BigIntOverlimit, BigIntOverlimit) -> expect(true)
     )
 
@@ -3673,8 +3675,6 @@ class LanguageSpecificationV5 extends LanguageSpecificationBase { suite =>
         "{ (x: Box) => x.creationInfo }",
         FuncValue(Vector((1, SBox)), ExtractCreationInfo(ValUse(1, SBox)))))
 
-    // TODO v6.0: fix collections equality and remove map(identity)(see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/909)
-    //  (PairOfColl should be equal CollOverArray)
     verifyCases(
       Seq(
         b1 -> Expected(Success(Coll[(Coll[Byte], Long)](
@@ -4151,12 +4151,12 @@ class LanguageSpecificationV5 extends LanguageSpecificationBase { suite =>
   property("Header properties equivalence") {
     verifyCases(
       Seq((h1, Expected(Success(
-        Helpers.decodeBytes("cea31f0e0a794b103f65f8296a22ac8ff214e1bc75442186b90df4844c978e81")),
+        Helpers.decodeBytes("4e18a26849e98a35a3b7dd25fa9a00c9f33fc8655568c265ffe42165b6d8f3c5")),
         cost = 1766, methodCostDetails(SHeaderMethods.idMethod, 10), 1766, Seq.fill(4)(2002)))),
       existingPropTest("id", { (x: Header) => x.id }))
 
     verifyCases(
-      Seq((h1, Expected(Success(0.toByte), cost = 1765, methodCostDetails(SHeaderMethods.versionMethod, 10), 1765, Seq.fill(4)(2001)))),
+      Seq((h1, Expected(Success(1.toByte), cost = 1765, methodCostDetails(SHeaderMethods.versionMethod, 10), 1765, Seq.fill(4)(2001)))),
       existingPropTest("version", { (x: Header) => x.version }))
 
     verifyCases(
@@ -4219,7 +4219,7 @@ class LanguageSpecificationV5 extends LanguageSpecificationBase { suite =>
 
     verifyCases(
       Seq((h1, Expected(Success(
-        CBigInt(new BigInteger("-e24990c47e15ed4d0178c44f1790cc72155d516c43c3e8684e75db3800a288", 16))),
+        CBigInt(SecP256K1Group.order.divide(new BigInteger("2")))),
         cost = 1765, methodCostDetails(SHeaderMethods.powDistanceMethod, 10), 1765, Seq.fill(4)(2001)))),
       existingPropTest("powDistance", { (x: Header) => x.powDistance }))
 
@@ -4786,14 +4786,6 @@ class LanguageSpecificationV5 extends LanguageSpecificationBase { suite =>
       existingPropTest("minerPubKey", { (x: Context) => x.minerPubKey }),
       preGeneratedSamples = Some(samples))
 
-// TODO v6.0: implement support of Option[T] in DataSerializer (see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/659)
-//  this will allow passing optional values in registers and also in constants
-//    testCases2(
-//      Seq(
-//        ctx -> Expected(Success(Some(true), cost = 0)),
-//        ctx2 -> Expected(Success(None, cost = 0)),
-//        ctx3 -> Expected(Success(None, cost = 0))
-//      ),
     testCases(
       Seq(
         ctx -> Success(Some(true)),
