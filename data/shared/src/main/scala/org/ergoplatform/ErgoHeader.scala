@@ -6,6 +6,7 @@ import scorex.util.ModifierId
 import sigma.Colls
 import sigma.crypto.{BigIntegers, CryptoConstants, EcPointType}
 import sigma.serialization.{GroupElementSerializer, SigmaByteReader, SigmaByteWriter, SigmaSerializer}
+import sigma.util.Extensions.BigIntegerOps
 
 import scala.runtime.ScalaRunTime
 import scala.util.hashing.MurmurHash3
@@ -74,7 +75,7 @@ object AutolykosSolution {
             val w = GroupElementSerializer.parse(r)
             val nonce = r.getBytes(8)
             val dBytesLength = r.getUByte()
-            val d = BigInt(BigIntegers.fromUnsignedByteArray(r.getBytes(dBytesLength)))
+            val d = BigIntegers.fromUnsignedByteArray(r.getBytes(dBytesLength)).toSignedBigIntValueExact
             new AutolykosSolution(pk, w, nonce, d)
         }
     }

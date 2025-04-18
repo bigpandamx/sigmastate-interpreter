@@ -18,7 +18,7 @@ import sigma.serialization.ErgoTreeSerializer
 import sigma.serialization.generators.ObjectGenerators
 import sigmastate.utils.Helpers
 import sigma.ast.{SBoolean, SSigmaProp}
-import sigma.crypto.EcPointType
+import sigma.crypto.{EcPointType, SecP256K1Group}
 import ErgoTree.HeaderType
 import sigma.eval.SigmaDsl
 
@@ -74,7 +74,11 @@ trait SigmaTestingData extends TestingCommons with ObjectGenerators {
 
     val BigIntMaxValue = createBigIntMaxValue()
 
-    val BigIntOverlimit = CBigInt(new BigInteger("7F" + "ff" * 33, 16))
+    val BigIntOverlimit = {
+      VersionContext.withVersions(2,2) {
+        CBigInt(new BigInteger("7F" + "ff" * 33, 16))
+      }
+    }
 
     val ge1str = "03358d53f01276211f92d0aefbd278805121d4ff6eb534b777af1ee8abae5b2056"
 
@@ -246,7 +250,7 @@ trait SigmaTestingData extends TestingCommons with ObjectGenerators {
     )
 
     val h1_instances = new CloneSet(1000, CHeader(
-      0.toByte,
+      1.toByte,
       Helpers.decodeBytes("0180dd805b0000ff5400b997fd7f0b9b00de00fb03c47e37806a8186b94f07ff"),
       Helpers.decodeBytes("01f07f60d100ffb970c3007f60ff7f24d4070bb8fffa7fca7f34c10001ffe39d"),
       CAvlTree(createAvlTreeData()).digest,
@@ -258,7 +262,7 @@ trait SigmaTestingData extends TestingCommons with ObjectGenerators {
       Helpers.decodeGroupElement("039bdbfa0b49cc6bef58297a85feff45f7bbeb500a9d2283004c74fcedd4bd2904"),
       Helpers.decodeGroupElement("0361299207fa392231e23666f6945ae3e867b978e021d8d702872bde454e9abe9c"),
       Helpers.decodeBytes("7f4f09012a807f01"),
-      CBigInt(new BigInteger("-e24990c47e15ed4d0178c44f1790cc72155d516c43c3e8684e75db3800a288", 16)),
+      CBigInt(SecP256K1Group.order.divide(new BigInteger("2"))),
       Helpers.decodeBytes("7f0180"),
       Colls.emptyColl[Byte]
     ))

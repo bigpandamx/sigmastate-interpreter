@@ -28,6 +28,7 @@ import sigma.interpreter.ContextExtension.VarBinding
 import sigmastate.interpreter.CErgoTreeEvaluator.{DefaultEvalSettings, currentEvaluator}
 import sigmastate.interpreter.Interpreter._
 import sigma.ast.Apply
+import sigma.data.SigmaConstants.AutolykosPowSolutionNonceArraySize
 import sigma.eval.{EvalSettings, SigmaDsl}
 import sigma.exceptions.InvalidType
 import sigma.serialization.{ErgoTreeSerializer, SerializerException}
@@ -1892,7 +1893,7 @@ class BasicOpsSpecification extends CompilerTestingCommons
 
   // the test shows that serialize(sigmaProp) is the same as sigmaProp.propBytes without first 2 bytes
   property("serialize and .propBytes correspondence") {
-    def deserTest() = test("deserializeTo", env, ext,
+    def deserTest() = test("serialize", env, ext,
       s"""{
             val p1 = getVar[SigmaProp]($propVar1).get
             val bytes = p1.propBytes
@@ -2386,6 +2387,32 @@ class BasicOpsSpecification extends CompilerTestingCommons
             val id = fromBase16("${Base16.encode(h1.id.toArray)}")
             header.height == ${h1.height} && header.stateRoot == tree && header.id == id
           }""",
+      null
+    )
+
+    if (ergoTreeVersionInTests < V6SoftForkVersion) {
+      an[sigma.validation.ValidationException] should be thrownBy deserTest()
+    } else {
+      deserTest()
+    }
+  }
+
+  property("deserializeTo - header with invalid powDistance") {
+    val td = new SigmaTestingData {}
+    val h1 = td.TestData.h1.asInstanceOf[CHeader].ergoHeader
+    val invalidPowDistance = new BigInteger(Array.fill(33)(33.toByte)) // Creating a byte array out of 256-bit range
+
+    val s = new AutolykosSolution(h1.powSolution.pk, h1.powSolution.w, h1.powSolution.n, invalidPowDistance)
+    val headerBytes = h1.copy(powSolution = s).bytes
+
+    val customExt = Seq(21.toByte -> ByteArrayConstant(Colls.fromArray(headerBytes)))
+
+    def deserTest() = test("deserializeToInvalidPowDistance", env, customExt,
+      s"""{
+            val ba = getVar[Coll[Byte]](21).get
+            val header = Global.deserializeTo[Header](ba)
+            header.height >= 0
+          }""",
       null,
       true
     )
@@ -2393,7 +2420,7 @@ class BasicOpsSpecification extends CompilerTestingCommons
     if (ergoTreeVersionInTests < V6SoftForkVersion) {
       an[sigma.validation.ValidationException] should be thrownBy deserTest()
     } else {
-      deserTest()
+      an[Exception] should be thrownBy deserTest()
     }
   }
 
@@ -3256,7 +3283,7 @@ class BasicOpsSpecification extends CompilerTestingCommons
       24.toByte -> ByteArrayConstant(updateProof)
     )
 
-    def deserTest() = test("deserializeTo", env, customExt,
+    def deserTest() = test("insertOrUpdate", env, customExt,
       s"""{
             val tree1 = getVar[AvlTree](21).get
             val tree2 = getVar[AvlTree](22).get

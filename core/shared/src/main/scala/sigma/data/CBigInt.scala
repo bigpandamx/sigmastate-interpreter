@@ -2,7 +2,7 @@ package sigma.data
 
 import sigma.crypto.BigIntegers
 import sigma.util.Extensions.BigIntegerOps
-import sigma.{BigInt, Coll, Colls, UnsignedBigInt}
+import sigma.{BigInt, Coll, Colls, UnsignedBigInt, VersionContext}
 
 import java.math.BigInteger
 
@@ -11,6 +11,10 @@ import java.math.BigInteger
   * @see [[BigInt]] for detailed descriptions
   */
 case class CBigInt(override val wrappedValue: BigInteger) extends BigInt with WrapperOf[BigInteger] {
+
+  if (VersionContext.current.isV3OrLaterErgoTreeVersion && wrappedValue.bitLength() > 256) {
+    throw new IllegalArgumentException(s"Too big unsigned big int value $wrappedValue")
+  }
 
   override def toByte: Byte = wrappedValue.toByteExact
 
