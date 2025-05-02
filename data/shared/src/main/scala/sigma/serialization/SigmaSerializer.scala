@@ -71,7 +71,7 @@ object SigmaSerializer {
 
 abstract class SigmaSerializer[TFamily, T <: TFamily] extends Serializer[TFamily, T, SigmaByteReader, SigmaByteWriter] {
 
-  def error(msg: String) = throw new SerializerException(msg, None)
+  def error(msg: String) = throw new SerializerException(msg)
 
   final def toBytes(obj: T): Array[Byte] = {
     val w = SigmaSerializer.startWriter()

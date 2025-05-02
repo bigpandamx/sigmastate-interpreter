@@ -220,6 +220,9 @@ trait TreeBuilding extends Base { IR: IRContext =>
       case Def(DeserializeContextDef(d, _)) =>
         d
 
+      case Def(DeserializeRegisterDef(d, _)) =>
+        d
+
       case Def(IsContextProperty(v)) => v
       case s if s == sigmaDslBuilder => Global
 
