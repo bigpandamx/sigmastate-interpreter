@@ -17,6 +17,10 @@ import sigma.serialization.{SigmaByteReader, SigmaByteWriter, SigmaSerializer}
   * @param values internal container of the key-value pairs
   */
 case class ContextExtension(values: scala.collection.Map[Byte, EvaluatedValue[_ <: SType]]) {
+
+  /**
+    * @return this extension with `bindings` added
+    */
   def add(bindings: VarBinding*): ContextExtension = {
     ContextExtension(values ++ bindings)
   }
