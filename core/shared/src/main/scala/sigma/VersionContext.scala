@@ -6,7 +6,7 @@ import scala.util.DynamicVariable
 
 /** Represent currently activated protocol version and currently executed ErgoTree version.
   *
-  * This parameters, once set in DynamicVariable can be accessed everywhere on the current
+  * These parameters, once set in DynamicVariable can be accessed everywhere on the current
   * thread.
   *
   * @param activatedVersion Currently activated script version == Block.headerVersion - 1

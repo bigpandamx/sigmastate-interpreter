@@ -15,7 +15,7 @@ Playgrounds](https://github.com/ergoplatform/ergo-playgrounds) or
 ErgoScript compiler is
 [published](https://mvnrepository.com/artifact/org.scorexfoundation/sigma-state)
 as a library which is cross compiled for Java 7 and Java 8+ and thus can be used
-from any JVM langugage and also on Android and JavaFX platforms. It is also cross-compiled to JavaScript using Scala.js.
+from any JVM language and also on Android and JavaFX platforms. It is also cross-compiled to JavaScript using Scala.js.
 
 The following example shows how source code of ErgoScript contract can be used
 to create new transaction using
