@@ -75,9 +75,6 @@ case class CBigInt(override val wrappedValue: BigInteger) extends BigInt with Wr
 
 }
 
-object CBigInt {
-  val MaxValue = new BigInteger("7F" + "ff" * 31, 16)
-}
 
 /** A default implementation of [[UnsignedBigInt]] interface.
   *
