@@ -107,6 +107,7 @@ class DataJsonEncoderSpecification extends SerializationSpecification {
     forAll { x: Long => roundtrip[SLong.type](x, SLong) }
     forAll { x: String => roundtrip[SString.type](x, SString) }
     forAll { x: BigInteger => roundtrip[SBigInt.type](x.toBigInt, SBigInt) }
+    forAll { x: BigInteger => roundtrip[SUnsignedBigInt.type](x.abs().toUnsignedBigInt, SUnsignedBigInt, Some(VersionContext.V6SoftForkVersion)) }
     forAll { x: EcPointType => roundtrip[SGroupElement.type](x.toGroupElement, SGroupElement) }
     forAll { x: SigmaBoolean => roundtrip[SSigmaProp.type](x.toSigmaProp, SSigmaProp) }
     forAll { x: AvlTree => roundtrip[SAvlTree.type](x, SAvlTree) }

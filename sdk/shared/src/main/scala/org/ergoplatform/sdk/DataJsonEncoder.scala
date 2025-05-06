@@ -16,6 +16,7 @@ import scorex.util.encode.Base16
 import scala.collection.compat.immutable.ArraySeq
 import scala.collection.mutable
 import sigma.ast._
+import sigma.crypto.BigIntegers
 import sigma.eval.SigmaDsl
 import sigma.serialization.SerializerException
 import sigma.serialization.{DataSerializer, SigmaSerializer}
@@ -53,6 +54,8 @@ object DataJsonEncoder {
     case SLong => v.asInstanceOf[Long].asJson
     case SBigInt =>
       encodeBytes(v.asInstanceOf[BigInt].toBytes.toArray)
+    case SUnsignedBigInt =>
+      encodeBytes(v.asInstanceOf[UnsignedBigInt].toBytes.toArray)
     case SString =>
       encodeBytes(v.asInstanceOf[String].getBytes)
     case tColl: SCollectionType[a] =>
@@ -171,6 +174,8 @@ object DataJsonEncoder {
       case SLong => json.asNumber.get.toLong.get
       case SBigInt =>
         SigmaDsl.BigInt(new BigInteger(decodeBytes(json)))
+      case SUnsignedBigInt =>
+        SigmaDsl.UnsignedBigInt(BigIntegers.fromUnsignedByteArray(decodeBytes(json)))
       case SString =>
         new String(decodeBytes(json))
       case tColl: SCollectionType[a] =>
