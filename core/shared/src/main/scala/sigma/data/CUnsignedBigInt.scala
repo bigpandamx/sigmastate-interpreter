@@ -14,11 +14,11 @@ import java.math.BigInteger
 case class CUnsignedBigInt(override val wrappedValue: BigInteger) extends UnsignedBigInt with WrapperOf[BigInteger] {
 
   if (wrappedValue.compareTo(BigInteger.ZERO) < 0) {
-    throw new IllegalArgumentException(s"Attempt to create unsigned value from negative big integer $wrappedValue")
+    throw new ArithmeticException(s"Attempt to create unsigned value from negative big integer $wrappedValue")
   }
 
   if (wrappedValue.bitLength() > 256) {
-    throw new IllegalArgumentException(s"Too big unsigned big int value $wrappedValue")
+    throw new ArithmeticException(s"Too big unsigned big int value $wrappedValue")
   }
 
   override def toByte: Byte = wrappedValue.toByteExact
@@ -83,9 +83,9 @@ case class CUnsignedBigInt(override val wrappedValue: BigInteger) extends Unsign
     CUnsignedBigInt(wrappedValue.xor(that.asInstanceOf[CUnsignedBigInt].wrappedValue))
   }
 
-  override def shiftLeft(n: Int): UnsignedBigInt = CUnsignedBigInt(wrappedValue.shiftLeft(n).toUnsignedBigIntValueExact)
+  override def shiftLeft(n: Int): UnsignedBigInt = CUnsignedBigInt(wrappedValue.shiftLeft(n))
 
-  override def shiftRight(n: Int): UnsignedBigInt = CUnsignedBigInt(wrappedValue.shiftRight(n).toUnsignedBigIntValueExact)
+  override def shiftRight(n: Int): UnsignedBigInt = CUnsignedBigInt(wrappedValue.shiftRight(n))
 
   override def bitwiseInverse(): UnsignedBigInt = {
     val bytes = BigIntegers.asUnsignedByteArray(32, wrappedValue)

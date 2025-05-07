@@ -11,8 +11,12 @@ import java.math.BigInteger
   */
 case class CBigInt(override val wrappedValue: BigInteger) extends BigInt with WrapperOf[BigInteger] {
 
-  if (VersionContext.current.isV3OrLaterErgoTreeVersion && wrappedValue.bitLength() > 256) {
-    throw new IllegalArgumentException(s"Too big unsigned big int value $wrappedValue")
+  // the check is identical to `fitsIn256Bits` in Extensions
+  // the check is used in >= 3 trees as there are ways to ask for big int
+  // deserialization now aside of register / context var deserialization
+  // e.g. Header w. Autolykos v1 deserialization
+  if (VersionContext.current.isV3OrLaterErgoTreeVersion && wrappedValue.bitLength() > 255) {
+    throw new ArithmeticException(s"Too big unsigned big int value $wrappedValue")
   }
 
   override def toByte: Byte = wrappedValue.toByteExact
@@ -61,11 +65,7 @@ case class CBigInt(override val wrappedValue: BigInteger) extends BigInt with Wr
   override def shiftRight(n: Int): BigInt = CBigInt(wrappedValue.shiftRight(n).toSignedBigIntValueExact)
 
   override def toUnsigned: UnsignedBigInt = {
-    if(this.wrappedValue.compareTo(BigInteger.ZERO) < 0){
-      throw new ArithmeticException("BigInteger argument for .toUnsigned is negative");
-    } else {
-      CUnsignedBigInt(this.wrappedValue)
-    }
+    CUnsignedBigInt(this.wrappedValue)
   }
 
   override def toUnsignedMod(m: UnsignedBigInt): UnsignedBigInt = {

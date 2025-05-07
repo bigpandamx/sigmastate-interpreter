@@ -6,7 +6,7 @@ import org.scalatest.Assertion
 import scorex.crypto.authds.{ADKey, ADValue}
 import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert, InsertOrUpdate}
 import scorex.crypto.hash.{Blake2b256, Digest32}
-import scorex.util.ByteArrayBuilder
+import scorex.util.{ByteArrayBuilder, idToBytes}
 import scorex.util.encode.Base16
 import scorex.utils.Ints
 import scorex.util.serialization.VLQByteBufferWriter
@@ -431,6 +431,7 @@ class BasicOpsSpecification extends CompilerTestingCommons
   }
 
   property("schnorr sig check") {
+    val td = new SigmaTestingData {}
 
     val g = CGroupElement(SecP256K1Group.generator)
 
@@ -443,7 +444,7 @@ class BasicOpsSpecification extends CompilerTestingCommons
 
     @tailrec
     def sign(msg: Array[Byte], secretKey: BigInt): (GroupElement, BigInt) = {
-      val r = randBigInt
+      val r = randBigInt.mod(td.TestData.BigIntMaxValue.asInstanceOf[CBigInt].wrappedValue)
 
       val a: GroupElement = g.exp(CBigInt(r.bigInteger))
       val z = (r + secretKey * BigInt(scorex.crypto.hash.Blake2b256(msg))).mod(CryptoConstants.groupOrder)
@@ -456,7 +457,8 @@ class BasicOpsSpecification extends CompilerTestingCommons
     }
 
     val holderSecret = randBigInt
-    val holderPk = g.exp(CBigInt(holderSecret.bigInteger))
+    val bi = CBigInt(holderSecret.bigInteger.mod(td.TestData.BigIntMaxValue.asInstanceOf[CBigInt].wrappedValue))
+    val holderPk = g.exp(bi)
 
     val message = Array.fill(5)(1.toByte)
 
@@ -3472,7 +3474,10 @@ class BasicOpsSpecification extends CompilerTestingCommons
 
   property("Global.decodeNbits - result of more than 256 bits") {
     val okValue = SigmaDsl.encodeNbits(CBigInt(new BigInteger("2").pow(255).subtract(BigInteger.ONE)))
-    val invalidValue = SigmaDsl.encodeNbits(CBigInt(new BigInteger("2").pow(256).subtract(BigInteger.ONE)))
+    val invalidBi: CBigInt = VersionContext.withVersions(2, 2) {
+      CBigInt(new BigInteger("2").pow(256).subtract(BigInteger.ONE))
+    }
+    val invalidValue = SigmaDsl.encodeNbits(invalidBi)
 
     def someTest(value: Long): Assertion = {
       test("some", env, ext,
