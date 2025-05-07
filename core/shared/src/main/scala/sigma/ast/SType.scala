@@ -497,9 +497,6 @@ case object SBigInt extends SPrimType with SEmbeddable with SNumericType with SM
   override val reprClass: RClass[_] = RClass(classOf[BigInt])
   override def typeId = typeCode
 
-  /** Type of Relation binary op like GE, LE, etc. */
-  val RelationOpType = SFunc(Array(SBigInt, SBigInt), SBoolean)
-
   /** The maximum size of BigInteger value in byte array representation. */
   val MaxSizeInBytes: Long = SigmaConstants.MaxBigIntSizeInBytes.value
 
@@ -536,10 +533,7 @@ case object SUnsignedBigInt extends SPrimType with SEmbeddable with SNumericType
   override val typeCode: TypeCode = 9: Byte
   override val reprClass: RClass[_] = RClass(classOf[UnsignedBigInt])
   override def typeId = typeCode
-
-  /** Type of Relation binary op like GE, LE, etc. */
-  val RelationOpType = SFunc(Array(SUnsignedBigInt, SUnsignedBigInt), SBoolean)
-
+  
   /** The maximum size of BigInteger value in byte array representation. */
   val MaxSizeInBytes: Long = SigmaConstants.MaxBigIntSizeInBytes.value // todo: 256 bits or more?
 

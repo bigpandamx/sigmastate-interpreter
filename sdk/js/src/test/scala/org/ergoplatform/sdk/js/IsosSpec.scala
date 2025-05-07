@@ -1,9 +1,8 @@
 package org.ergoplatform.sdk.js
 
-import io.circe.parser.parse
 import org.ergoplatform.ErgoBox.{AdditionalRegisters, BoxId, TokenId}
 import org.ergoplatform._
-import org.ergoplatform.sdk.{ExtendedInputBox, JsonCodecs}
+import org.ergoplatform.sdk.ExtendedInputBox
 import org.ergoplatform.sdk.wallet.protocol.context.BlockchainStateContext
 import org.scalacheck.Arbitrary
 import sigma.ast.{Constant, SType}
