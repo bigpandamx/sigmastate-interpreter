@@ -16,7 +16,7 @@ case class CBigInt(override val wrappedValue: BigInteger) extends BigInt with Wr
   // deserialization now aside of register / context var deserialization
   // e.g. Header w. Autolykos v1 deserialization
   if (VersionContext.current.isV3OrLaterErgoTreeVersion && wrappedValue.bitLength() > 255) {
-    throw new ArithmeticException(s"Too big unsigned big int value $wrappedValue")
+    throw new ArithmeticException(s"Too big bigint value $wrappedValue")
   }
 
   override def toByte: Byte = wrappedValue.toByteExact

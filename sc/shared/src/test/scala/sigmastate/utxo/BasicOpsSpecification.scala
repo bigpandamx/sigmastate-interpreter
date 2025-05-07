@@ -439,12 +439,12 @@ class BasicOpsSpecification extends CompilerTestingCommons
       val random = new SecureRandom()
       val values = new Array[Byte](32)
       random.nextBytes(values)
-      BigInt(values).mod(SecP256K1Group.q)
+      BigInt(values).mod(td.TestData.BigIntMaxValue.asInstanceOf[CBigInt].wrappedValue)
     }
 
     @tailrec
     def sign(msg: Array[Byte], secretKey: BigInt): (GroupElement, BigInt) = {
-      val r = randBigInt.mod(td.TestData.BigIntMaxValue.asInstanceOf[CBigInt].wrappedValue)
+      val r = randBigInt
 
       val a: GroupElement = g.exp(CBigInt(r.bigInteger))
       val z = (r + secretKey * BigInt(scorex.crypto.hash.Blake2b256(msg))).mod(CryptoConstants.groupOrder)
@@ -457,7 +457,7 @@ class BasicOpsSpecification extends CompilerTestingCommons
     }
 
     val holderSecret = randBigInt
-    val bi = CBigInt(holderSecret.bigInteger.mod(td.TestData.BigIntMaxValue.asInstanceOf[CBigInt].wrappedValue))
+    val bi = CBigInt(holderSecret.bigInteger)
     val holderPk = g.exp(bi)
 
     val message = Array.fill(5)(1.toByte)
@@ -3506,5 +3506,28 @@ class BasicOpsSpecification extends CompilerTestingCommons
       null
     )
   }
+
+  property("expUnsigned - with mod inside") {
+      val zz = SecP256K1Group.order.add(new BigInteger("8"))
+      def someTest() = test("exp", env, ext,
+        s"""{
+           |
+           |      val g: GroupElement = groupGenerator
+           |      val z = unsignedBigInt("8")
+           |      val zz = unsignedBigInt("${zz.toString}")
+           |
+           |      sigmaProp(g.expUnsigned(z) == g.expUnsigned(zz))
+           |}""".stripMargin,
+        null,
+        true
+      )
+
+    if (VersionContext.current.isV3OrLaterErgoTreeVersion) {
+      someTest()
+    } else {
+      an[Exception] should be thrownBy someTest()
+    }
+  }
+
 
 }
