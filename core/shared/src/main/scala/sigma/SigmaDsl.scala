@@ -286,14 +286,14 @@ trait UnsignedBigInt {
     */
   def max(that: UnsignedBigInt): UnsignedBigInt
 
-  /** Returns a BigInteger whose value is `(this & that)`.
+  /** Returns UnsignedBigInteger whose value is `(this & that)`.
     * @param that value to be AND'ed with this BigInteger.
     * @return `this & that`
     */
   def and(that: UnsignedBigInt): UnsignedBigInt
   def &(that: UnsignedBigInt): UnsignedBigInt = and(that)
 
-  /** Returns a BigInteger whose value is `(this | that)`.
+  /** Returns UnsignedBigInteger whose value is `(this | that)`.
     *
     * @param that value to be OR'ed with this BigInteger.
     * @return `this | that`
@@ -301,6 +301,10 @@ trait UnsignedBigInt {
   def or(that: UnsignedBigInt): UnsignedBigInt
   def |(that: UnsignedBigInt): UnsignedBigInt = or(that)
 
+  /**
+    * @return UnsignedBigInteger whose value is multiplicative inverse mod `m` ,
+    *         or throw exception if there is no inverse
+    */
   def modInverse(m: UnsignedBigInt): UnsignedBigInt
 
   /**

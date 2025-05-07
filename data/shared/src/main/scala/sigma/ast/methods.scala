@@ -542,7 +542,7 @@ case object SUnsignedBigIntMethods extends SNumericTypeMethods {
   /** Type for which this container defines methods. */
   override def ownerType: SMonoType = SUnsignedBigInt
 
-  final val ModInverseCostInfo = OperationCostInfo(FixedCost(JitCost(30)), NamedDesc("ModInverseMethodCall"))
+  final val ModInverseCostInfo = OperationCostInfo(FixedCost(JitCost(150)), NamedDesc("ModInverseMethodCall"))
 
   val ModInverseMethod = SMethod(this, "modInverse", SFunc(Array(this.ownerType, this.ownerType), this.ownerType), 14, ModInverseCostInfo.costKind)
     .withIRInfo(MethodCallIrBuilder)
