@@ -188,7 +188,6 @@ class SigmaTyperTest extends AnyPropSpec
     typecheck(env, "{ (a: Int) => (1, 2L)(a) }") shouldBe SFunc(IndexedSeq(SInt), SAny)
   }
 
-  // TODO soft-fork: https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
   ignore("tuple advanced operations") {
     typecheck(env, "(1, 2L).getOrElse(2, 3)") shouldBe SAny
     typecheck(env, "(1, 2L).slice(0, 2)") shouldBe SCollection(SAny)
@@ -263,10 +262,6 @@ class SigmaTyperTest extends AnyPropSpec
     typecheck(env, "{ (a: Int) => { val b = a + 1; b } }") shouldBe SFunc(IndexedSeq(SInt), SInt)
     typecheck(env, "{ (a: Int, box: Box) => a + box.value }") shouldBe
       SFunc(IndexedSeq(SInt, SBox), SLong)
-    /* TODO soft-fork: https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
-    typecheck(env, "{ (p: (Int, GroupElement), box: Box) => p._1 > box.value && p._2.isIdentity }") shouldBe
-      SFunc(IndexedSeq(STuple(SInt, SGroupElement), SBox), SBoolean)
-      */
     typecheck(env, "{ (p: (Int, SigmaProp), box: Box) => p._1 > box.value && p._2.isProven }") shouldBe
       SFunc(IndexedSeq(STuple(SInt, SSigmaProp), SBox), SBoolean)
 
@@ -307,8 +302,6 @@ class SigmaTyperTest extends AnyPropSpec
     typecheck(env, "SELF.R1[Int].isDefined") shouldBe SBoolean
     typecheck(env, "SELF.R1[Int].isEmpty") shouldBe SBoolean
     typecheck(env, "SELF.R1[Int].get") shouldBe SInt
-    // TODO soft-fork: https://github.com/ScorexFoundation/sigmastate-interpreter/issues/416
-    //  typecheck(env, "SELF.getReg[Int](1)") shouldBe SOption.SIntOption
     typefail(env, "x[Int]", 1, 1)
     typefail(env, "arr1[Int]", 1, 1)
     typecheck(env, "SELF.R1[(Int,Boolean)]") shouldBe SOption(STuple(SInt, SBoolean))
@@ -681,11 +674,6 @@ class SigmaTyperTest extends AnyPropSpec
   property("SBox.tokens") {
     typecheck(env, "SELF.tokens") shouldBe ErgoBox.STokensRegType
   }
-
-// TODO soft-fork: related to https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
-//  property("SOption.toColl") {
-//    typecheck(env, "getVar[Int](1).toColl") shouldBe SIntArray
-//  }
 
   property("SContext.dataInputs") {
     typecheck(env, "CONTEXT.dataInputs") shouldBe SCollection(SBox)

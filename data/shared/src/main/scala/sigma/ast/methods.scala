@@ -474,12 +474,6 @@ case object SBooleanMethods extends MonoTypeMethods {
 
   val ToByte = "toByte"
   protected override def getMethods() = super.getMethods()
-  /* TODO soft-fork: https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
-  ++ Seq(
-    SMethod(this, ToByte, SFunc(this, SByte), 1)
-      .withInfo(PropertyCall, "Convert true to 1 and false to 0"),
-  )
-  */
 }
 
 /** Methods of ErgoTree type `Byte`. */
@@ -646,10 +640,6 @@ case object SGroupElementMethods extends MonoTypeMethods {
     .withInfo(PropertyCall, "Inverse element of the group.")
 
   protected override def getMethods(): Seq[SMethod] = {
-    /* TODO soft-fork: https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
-    SMethod(this, "isIdentity", SFunc(this, SBoolean),   1)
-        .withInfo(PropertyCall, "Checks if this value is identity element of the eliptic curve group."),
-    */
     val v5Methods = Seq(
       GetEncodedMethod,
       ExponentiateMethod,
@@ -747,18 +737,6 @@ object SOptionMethods extends MethodsContainer {
          |return the result of evaluating \lst{default}.
         """.stripMargin, ArgInfo("default", "the default value"))
 
-// TODO soft-fork: https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
-//  val FoldMethod = SMethod(
-//    this, Fold, SFunc(Array(ThisType, tR, SFunc(tT, tR)), tR, Array[STypeParam](tT, tR)), 5, FixedCost(JitCost(1)))
-//      .withInfo(MethodCall,
-//        """Returns the result of applying \lst{f} to this option's
-//         |  value if the option is nonempty.  Otherwise, evaluates
-//         |  expression \lst{ifEmpty}.
-//         |  This is equivalent to \lst{option map f getOrElse ifEmpty}.
-//        """.stripMargin,
-//        ArgInfo("ifEmpty", "the expression to evaluate if empty"),
-//        ArgInfo("f", "the function to apply if nonempty"))
-
   val MapMethod = SMethod(this, "map",
     SFunc(Array(ThisType, SFunc(tT, tR)), SOption(tR), Array(paramT, paramR)), 7, FixedCost(JitCost(20)))
       .withIRInfo(MethodCallIrBuilder)
@@ -781,9 +759,6 @@ object SOptionMethods extends MethodsContainer {
         IsDefinedMethod,
         GetMethod,
         GetOrElseMethod,
-        /* TODO soft-fork: https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
-        FoldMethod,
-        */
         MapMethod,
         FilterMethod
       )

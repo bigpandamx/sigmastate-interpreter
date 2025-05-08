@@ -598,9 +598,6 @@ class ErgoTreeSpecification extends SigmaDslTesting with ContractsTestkit with C
         MInfo(2, IsDefinedMethod),
         MInfo(3, GetMethod),
         MInfo(4, GetOrElseMethod),
-        /* TODO soft-fork: https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
-        FoldMethod,
-        */
         MInfo(7, MapMethod),
         MInfo(8, FilterMethod)
       ), true)
