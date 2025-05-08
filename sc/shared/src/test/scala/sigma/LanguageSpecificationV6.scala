@@ -1279,7 +1279,6 @@ class LanguageSpecificationV6 extends LanguageSpecificationBase { suite =>
     }
   }
 
-  // TODO v6.0: implement Option.fold (see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479)
   property("Option new methods") {
     val n = ExactNumeric.LongIsExactNumeric
     val fold = newFeature({ (x: Option[Long]) => x.fold(5.toLong)( (v: Long) => n.plus(v, 1) ) },

@@ -58,10 +58,16 @@ case class CBigInt(override val wrappedValue: BigInteger) extends BigInt with Wr
 
   override def or(that: BigInt): BigInt = CBigInt(wrappedValue.or(that.asInstanceOf[CBigInt].wrappedValue))
 
+  // there is no need to do .toSignedBigIntValueExact check, as this method is introduced in trees v3,
+  // and for trees v3, the check done in constructor
   override def xor(that: BigInt): BigInt = CBigInt(wrappedValue.xor(that.asInstanceOf[CBigInt].wrappedValue))
 
+  // there is no need to do .toSignedBigIntValueExact check, as this method is introduced in trees v3,
+  // and for trees v3, the check done in constructor
   override def shiftLeft(n: Int): BigInt = CBigInt(wrappedValue.shiftLeft(n).toSignedBigIntValueExact)
 
+  // there is no need to do .toSignedBigIntValueExact check, as this method is introduced in trees v3,
+  // and for trees v3, the check done in constructor
   override def shiftRight(n: Int): BigInt = CBigInt(wrappedValue.shiftRight(n).toSignedBigIntValueExact)
 
   override def toUnsigned: UnsignedBigInt = {
