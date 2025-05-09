@@ -107,7 +107,7 @@ class TypeSerializer {
         // `Tuple` type with more than 4 items `(Int, Byte, Box, Boolean, Int)`
         serializeTuple(tup, w)
     }
-    case SFunc(tDom, tRange, tpeParams) =>
+    case SFunc(tDom, tRange, tpeParams) if VersionContext.current.isV3OrLaterErgoTreeVersion =>
       w.put(SFunc.FuncTypeCode)
       w.putUByte(tDom.length)
       tDom.foreach { st =>
@@ -252,7 +252,7 @@ class TypeSerializer {
 object TypeSerializer extends TypeSerializer {
   /** The list of embeddable types, i.e. types that can be combined with type constructor for optimized encoding.
     * For each embeddable type `T`, and type constructor `C`, the type `C[T]` can be represented by single byte. */
-    def embeddableIdToType = {
+    def embeddableIdToType: Array[SType] = {
       if (VersionContext.current.isV3OrLaterErgoTreeVersion) {
         embeddableV6
       } else {

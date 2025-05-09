@@ -44,9 +44,7 @@ import sigma.VersionContext
   */
 abstract class SigmaValidationSettings extends Iterable[(Short, (ValidationRule, RuleStatus))] {
   def get(id: Short): Option[(ValidationRule, RuleStatus)]
-
   def getStatus(id: Short): Option[RuleStatus]
-
   def updated(id: Short, newStatus: RuleStatus): SigmaValidationSettings
 
   /**
@@ -68,13 +66,11 @@ abstract class SigmaValidationSettings extends Iterable[(Short, (ValidationRule,
       case None => false
     }
   }
-
 }
 
 /** Default representation of validation settings. */
 sealed class MapSigmaValidationSettings(private val map: Map[Short, (ValidationRule, RuleStatus)]) extends SigmaValidationSettings {
   override def iterator: Iterator[(Short, (ValidationRule, RuleStatus))] = map.iterator
-
   override def get(id: Short): Option[(ValidationRule, RuleStatus)] = map.get(id)
 
   /** HOTSPOT: don't beautify this code */
@@ -85,7 +81,7 @@ sealed class MapSigmaValidationSettings(private val map: Map[Short, (ValidationR
   }
 
   override def updated(id: Short, newStatus: RuleStatus): MapSigmaValidationSettings = {
-    val (rule, _) = map(id)
+    val (rule,_) = map(id)
     new MapSigmaValidationSettings(map.updated(id, (rule, newStatus)))
   }
 

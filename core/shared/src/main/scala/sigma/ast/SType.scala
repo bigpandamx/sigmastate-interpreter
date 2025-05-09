@@ -535,7 +535,7 @@ case object SUnsignedBigInt extends SPrimType with SEmbeddable with SNumericType
   override def typeId = typeCode
   
   /** The maximum size of BigInteger value in byte array representation. */
-  val MaxSizeInBytes: Long = SigmaConstants.MaxBigIntSizeInBytes.value // todo: 256 bits or more?
+  val MaxSizeInBytes: Long = SigmaConstants.MaxBigIntSizeInBytes.value
 
   override def numericTypeIndex: Int = 5
 

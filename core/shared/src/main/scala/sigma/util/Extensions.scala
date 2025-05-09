@@ -222,6 +222,15 @@ object Extensions {
         throw new ArithmeticException("BigInteger out of 256 bit range");
     }
 
+    /** Checks this {@code BigInteger} can be cast to unsigned 256 bit representation,
+      * If the value of this {@code BigInteger}
+      * is out of the range of the 256 bits, then an {@code ArithmeticException} is thrown.
+      *
+      * @return this {@code BigInteger} if the check is successful
+      * @throws ArithmeticException if the value of {@code this} will
+      * not exactly fit in a 256 bit range.
+      * @see BigInteger#longValueExact
+      */
     @inline final def toUnsignedBigIntValueExact: BigInteger = {
       if (x.compareTo(BigInteger.ZERO) >= 0 && x.bitLength() <= 256) {
         x
