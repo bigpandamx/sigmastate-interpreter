@@ -1334,6 +1334,15 @@ def executeFromSelfRegWithDefault[T](id: Int, default: T): T
 def substConstants[T](scriptBytes: Coll[Byte], positions: Coll[Int], newValues: Coll[T]): Coll[Byte]
 ```
 
+## Known Limitations
+
+* You can use methods added in 6.0 and new `UnsignedBigInt` type only within an ErgoTree with version >= 3 
+* 6.0 methods and other changes can be found in [EIP-50](https://github.com/ergoplatform/eips/pull/100)
+* You can't put values of `Option[]`, `Header`, `UnsignedBigInt` types into registers or context extension variables to 
+avoid versioning issues with 5.0 clients. To bypass the limitation, you can write typed value as bytes and call `Global.deserialize` in a script 
+to get an instance of those types.  
+
+
 ## Examples
 
 See [white paper for examples](https://ergoplatform.org/docs/ErgoScript.pdf)
