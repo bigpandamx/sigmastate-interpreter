@@ -212,12 +212,12 @@ class TypeSerializer {
           val tdLength = r.getUByte()
 
           val tDom = (1 to tdLength).map { _ =>
-            deserialize(r)
+            deserialize(r, depth + 1)
           }
-          val tRange = deserialize(r)
+          val tRange = deserialize(r, depth + 1)
           val tpeParamsLength = r.getUByte()
           val tpeParams = (1 to tpeParamsLength).map { _ =>
-            val ident = deserialize(r)
+            val ident = deserialize(r, depth + 1)
             require(ident.isInstanceOf[STypeVar])
             STypeParam(ident.asInstanceOf[STypeVar])
           }
