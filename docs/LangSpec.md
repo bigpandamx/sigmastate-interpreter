@@ -1341,6 +1341,8 @@ def substConstants[T](scriptBytes: Coll[Byte], positions: Coll[Int], newValues: 
 * You can't put values of `Option[]`, `Header`, `UnsignedBigInt` types into registers or context extension variables to 
 avoid versioning issues with 5.0 clients. To bypass the limitation, you can write typed value as bytes and call `Global.deserialize` in a script 
 to get an instance of those types.  
+* Higher order lambdas supported since 6.0 (you need to use ErgoTree v3 to have them parsed), see a higher order lambda example @ 
+[https://github.com/ergoplatform/sigmastate-interpreter/blob/b754e143cf38ed86d95698ede744a470dfa053d6/sigmastate/src/test/scala/special/sigma/SigmaDslSpecification.scala#L10040](https://github.com/ergoplatform/sigmastate-interpreter/blob/b754e143cf38ed86d95698ede744a470dfa053d6/sigmastate/src/test/scala/special/sigma/SigmaDslSpecification.scala#L10040)
 
 
 ## Examples

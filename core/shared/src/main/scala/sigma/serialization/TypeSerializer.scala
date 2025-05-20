@@ -107,6 +107,7 @@ class TypeSerializer {
         // `Tuple` type with more than 4 items `(Int, Byte, Box, Boolean, Int)`
         serializeTuple(tup, w)
     }
+    // implemented in 6.0, https://github.com/ergoplatform/sigmastate-interpreter/issues/847
     case SFunc(tDom, tRange, tpeParams) if VersionContext.current.isV3OrLaterErgoTreeVersion =>
       w.put(SFunc.FuncTypeCode)
       w.putUByte(tDom.length)
@@ -206,6 +207,7 @@ class TypeSerializer {
         case SHeader.typeCode => SHeader
         case SPreHeader.typeCode => SPreHeader
         case SGlobal.typeCode => SGlobal
+        // SFunc serialization implemented in 6.0, https://github.com/ergoplatform/sigmastate-interpreter/issues/847
         case SFunc.FuncTypeCode if VersionContext.current.isV3OrLaterErgoTreeVersion =>
           val tdLength = r.getUByte()
 
