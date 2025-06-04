@@ -4,7 +4,7 @@
 
 ErgoScript is a language to write contracts for [Ergo
 blockchain](https://ergoplatform.org). ErgoScript contracts can be compiled to
-[ErgoTrees](https://ergoplatform.org/docs/ErgoTree.pdf), typed abstract serialized and stored
+[ErgoTrees](https://ergoplatform.org/docs/ErgoTree.pdf), typed abstract syntax treeы which are serialized and stored
 in UTXOs.
 
 A good starting point to writing contracts is to use [ErgoScript by
@@ -221,7 +221,7 @@ class Numeric {
 
 The only exception for conversions is about BigInt to and from UnsignedBigInt. To convert from signed big int to unsigned, use
 `.toUnsigned` method to convert signed big integer to unsigned, or `.toUnsignedMod(m)` to convert modulo `m` (and modulo
- operation is cryptographic, ie always returns positive number modulo `m`). To convert from unsigned big int to signed,
+ operation is cryptographic, i.e. always returns positive number modulo `m`). To convert from unsigned big int to signed,
  use `.toSigned`.
 
 All the predefined numeric types inherit Numeric class and its methods.
@@ -1017,10 +1017,9 @@ satisfying some predicate (condition)
 val ok = OUTPUTS.exists { (box: Box) => box.value > 1000 }
 ``` 
 
-### Predefined global functions
+### Global functions
 
 There are some functions which do not belong to other types, thus they put under `Global` type. Those functions are:
-
 
 
 ```
@@ -1084,7 +1083,7 @@ src == restored
 ```
 
 
-### Predefined global functions
+### Predefined functions
 <a name="PredefinedFunctions"></a>
 
 ErgoScript standard library include predefined functions that can be called 

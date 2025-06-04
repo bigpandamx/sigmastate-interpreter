@@ -179,10 +179,12 @@ object OpCodes {
   val BitShiftLeftCode     : OpCode = newOpCode(135)
   val BitShiftRightZeroedCode     : OpCode = newOpCode(136)
 
+  // todo: not used, remove
   val CollShiftRightCode    : OpCode = newOpCode(137)
   val CollShiftLeftCode     : OpCode = newOpCode(138)
   val CollShiftRightZeroedCode     : OpCode = newOpCode(139)
 
+  // todo: not used, remove
   val CollRotateLeftCode     : OpCode = newOpCode(140)
   val CollRotateRightCode     : OpCode = newOpCode(141)
 
