@@ -574,20 +574,11 @@ trait ObjectGenerators extends TypeGenerators
   } yield node
 
   def numExprTreeGen: Gen[Value[SNumericType]] = {
-    if(VersionContext.current.isV3OrLaterErgoTreeVersion) {
-      Gen.oneOf(arbByteConstants.arbitrary,
-        arbIntConstants.arbitrary,
-        arbLongConstants.arbitrary,
-        arbBigIntConstant.arbitrary,
-        arbUnsignedBigIntConstant.arbitrary,
-        Gen.delay(numExprTreeNodeGen))
-    } else {
-      Gen.oneOf(arbByteConstants.arbitrary,
-        arbIntConstants.arbitrary,
-        arbLongConstants.arbitrary,
-        arbBigIntConstant.arbitrary,
-        Gen.delay(numExprTreeNodeGen))
-    }
+    Gen.oneOf(arbByteConstants.arbitrary,
+      arbIntConstants.arbitrary,
+      arbLongConstants.arbitrary,
+      arbBigIntConstant.arbitrary,
+      Gen.delay(numExprTreeNodeGen))
   }
 
   def comparisonExprTreeNodeGen: Gen[Value[SBoolean.type]] = for {
