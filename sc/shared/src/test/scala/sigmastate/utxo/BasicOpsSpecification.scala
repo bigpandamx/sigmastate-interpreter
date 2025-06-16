@@ -127,6 +127,12 @@ class BasicOpsSpecification extends CompilerTestingCommons
       prop shouldBe propExp
 
     val tree = ErgoTree.fromProposition(ergoTreeHeaderInTests, prop)
+
+    // check ErgoTree roundtrip
+    val tBytes = ErgoTreeSerializer.DefaultSerializer.serializeErgoTree(tree)
+    val tBytes2 = ErgoTreeSerializer.DefaultSerializer.serializeErgoTree(ErgoTreeSerializer.DefaultSerializer.deserializeErgoTree(tBytes))
+    tBytes.sameElements(tBytes2) shouldBe true
+
     val p3 = prover.dlogSecrets(2).publicImage
     val boxToSpend = testBox(10, tree,
       additionalRegisters = additionalRegistersOpt.getOrElse(Map(
