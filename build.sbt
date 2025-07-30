@@ -1,6 +1,7 @@
 import scala.language.postfixOps
 import scala.sys.process.*
 import org.scalajs.linker.interface.{CheckedBehavior, ModuleSplitStyle}
+import sbt.Keys.localStaging
 
 organization := "org.scorexfoundation"
 
@@ -49,11 +50,15 @@ lazy val commonSettings = Seq(
         </developer>
       </developers>,
   publishMavenStyle := true,
-  publishTo := sonatypePublishToBundle.value,
+  publishTo := {
+    val centralSnapshots = "https://central.sonatype.com/repository/maven-snapshots/"
+    if (isSnapshot.value) Some("central-snapshots" at centralSnapshots)
+    else localStaging.value
+  },
   scmInfo := Some(
       ScmInfo(
-          url("https://github.com/ScorexFoundation/sigmastate-interpreter"),
-          "scm:git@github.com:ScorexFoundation/sigmastate-interpreter.git"
+          url("https://github.com/ergoplatform/sigmastate-interpreter"),
+          "scm:git@github.com:ergoplatform/sigmastate-interpreter.git"
       )
   )
 )
