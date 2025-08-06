@@ -29,7 +29,7 @@ lazy val commonSettings = Seq(
   javacOptions ++= javacReleaseOption,
   resolvers += Resolver.sonatypeRepo("public"),
   licenses := Seq("CC0" -> url("https://creativecommons.org/publicdomain/zero/1.0/legalcode")),
-  homepage := Some(url("https://github.com/ScorexFoundation/sigmastate-interpreter")),
+  homepage := Some(url("https://github.com/ergoplatform/sigmastate-interpreter")),
   description := "Interpreter of a Sigma-State language",
   pomExtra :=
       <developers>
@@ -393,7 +393,7 @@ credentials ++= (for {
 credentials ++= (for {
   username <- Option(System.getenv().get("SONATYPE_USERNAME"))
   password <- Option(System.getenv().get("SONATYPE_PASSWORD"))
-} yield Credentials("Sonatype Nexus Repository Manager", "oss.sonatype.org", username, password)).toSeq
+} yield Credentials("Sonatype Nexus Repository Manager", "central.sonatype.com", username, password)).toSeq
 
 
 // PGP key for signing a release build published to sonatype
