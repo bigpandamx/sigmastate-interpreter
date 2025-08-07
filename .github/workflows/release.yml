@@ -61,6 +61,8 @@ jobs:
 
       - name: Publish JS snapshot ${{ github.ref }}
         run: npm publish --provenance
+        permissions:
+            id-token: write   # This is required for provenance
         working-directory: ./sigma-js
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
