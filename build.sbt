@@ -27,7 +27,7 @@ lazy val commonSettings = Seq(
     }
   },
   javacOptions ++= javacReleaseOption,
-  resolvers += Resolver.sonatypeRepo("public"),
+  resolvers ++= Resolver.sonatypeOssRepos("releases"),
   licenses := Seq("CC0" -> url("https://creativecommons.org/publicdomain/zero/1.0/legalcode")),
   homepage := Some(url("https://github.com/ergoplatform/sigmastate-interpreter")),
   description := "Interpreter of a Sigma-State language",
