@@ -1998,6 +1998,50 @@ case object SGlobalMethods extends MonoTypeMethods {
       { mtype => Array(mtype.tRange) })
     .withInfo(PropertyCall, "Returns empty Option[T] of given type T.")
 
+  lazy val verifyBoxHasMarkerTokenMethod = SMethod(this, "verifyBoxHasMarkerToken",
+    SFunc(Array(SGlobal, SBox, SByteArray), SBoolean), 11, FixedCost(JitCost(15)))
+    .withIRInfo(MethodCallIrBuilder)
+    .withInfo(MethodCall, "Verifies that the given box contains at least one token with the specified token ID and amount >= 1.",
+      ArgInfo("box", "the box to check for tokens"),
+      ArgInfo("tokenId", "the token ID to search for"))
+
+  lazy val verifyBoxHasNoMarkerTokenMethod = SMethod(this, "verifyBoxHasNoMarkerToken",
+    SFunc(Array(SGlobal, SBox, SByteArray), SBoolean), 12, FixedCost(JitCost(15)))
+    .withIRInfo(MethodCallIrBuilder)
+    .withInfo(MethodCall, "Verifies that the given box does not contain any tokens with the specified token ID.",
+      ArgInfo("box", "the box to check for tokens"),
+      ArgInfo("tokenId", "the token ID to check absence of"))
+
+  lazy val verifyUsedAdditionalRegistersMethod = SMethod(this, "verifyUsedAdditionalRegisters",
+    SFunc(Array(SGlobal, SBox, SInt), SBoolean), 13, FixedCost(JitCost(20)))
+    .withIRInfo(MethodCallIrBuilder)
+    .withInfo(MethodCall, "Verifies that exactly the specified number of additional registers (R4-R9) are used in the box.",
+      ArgInfo("box", "the box to check registers for"),
+      ArgInfo("used", "number of additional registers that should be used (0-6)"))
+
+  lazy val verifySameForBasicRequiredRegistersMethod = SMethod(this, "verifySameForBasicRequiredRegisters",
+    SFunc(Array(SGlobal, SBox, SBox), SBoolean), 14, FixedCost(JitCost(10)))
+    .withIRInfo(MethodCallIrBuilder)
+    .withInfo(MethodCall, "Verifies that two boxes have the same basic required properties: value and propositionBytes.",
+      ArgInfo("inBox", "the input box to compare"),
+      ArgInfo("outBox", "the output box to compare"))
+
+  lazy val verifySameForRequiredRegistersMethod = SMethod(this, "verifySameForRequiredRegisters",
+    SFunc(Array(SGlobal, SBox, SBox), SBoolean), 15, FixedCost(JitCost(15)))
+    .withIRInfo(MethodCallIrBuilder)
+    .withInfo(MethodCall, "Verifies that two boxes have the same required registers: value, propositionBytes, and tokens.",
+      ArgInfo("inBox", "the input box to compare"),
+      ArgInfo("outBox", "the output box to compare"))
+
+  lazy val verifySpentTokenMethod = SMethod(this, "verifySpentToken",
+    SFunc(Array(SGlobal, SBox, SBox, SByteArray, SLong), SBoolean), 16, FixedCost(JitCost(25)))
+    .withIRInfo(MethodCallIrBuilder)
+    .withInfo(MethodCall, "Verifies that the specified token was spent correctly between input and output boxes.",
+      ArgInfo("inBox", "the input box"),
+      ArgInfo("outBox", "the output box"),
+      ArgInfo("tokenId", "the token ID that was spent"),
+      ArgInfo("amount", "the amount of the token that was spent"))
+
   protected override def getMethods() = super.getMethods() ++ {
     if (VersionContext.current.isV3OrLaterErgoTreeVersion) {
       Seq(
@@ -2010,7 +2054,13 @@ case object SGlobalMethods extends MonoTypeMethods {
         decodeNBitsMethod,
         FromBigEndianBytesMethod,
         someMethod,
-        noneMethod
+        noneMethod,
+        verifyBoxHasMarkerTokenMethod,
+        verifyBoxHasNoMarkerTokenMethod,
+        verifyUsedAdditionalRegistersMethod,
+        verifySameForBasicRequiredRegistersMethod,
+        verifySameForRequiredRegistersMethod,
+        verifySpentTokenMethod
       )
     } else {
       Seq(

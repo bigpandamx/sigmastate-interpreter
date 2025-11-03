@@ -613,6 +613,25 @@ object GraphIRReflection {
         },
         mkMethod(clazz, "none", Array[Class[_]](classOf[TypeDescs#Elem[_]])) { (obj, args) =>
           obj.asInstanceOf[ctx.SigmaDslBuilder].none()(args(0).asInstanceOf[ctx.Elem[SType]])
+        },
+        mkMethod(clazz, "verifyBoxHasMarkerToken", Array[Class[_]](classOf[Base#Ref[_]], classOf[Base#Ref[_]])) { (obj, args) =>
+          obj.asInstanceOf[ctx.SigmaDslBuilder].verifyBoxHasMarkerToken(args(0).asInstanceOf[ctx.Ref[ctx.Box]], args(1).asInstanceOf[ctx.Ref[ctx.Coll[Byte]]])
+        },
+        mkMethod(clazz, "verifyBoxHasNoMarkerToken", Array[Class[_]](classOf[Base#Ref[_]], classOf[Base#Ref[_]])) { (obj, args) =>
+          obj.asInstanceOf[ctx.SigmaDslBuilder].verifyBoxHasNoMarkerToken(args(0).asInstanceOf[ctx.Ref[ctx.Box]], args(1).asInstanceOf[ctx.Ref[ctx.Coll[Byte]]])
+        },
+        mkMethod(clazz, "verifyUsedAdditionalRegisters", Array[Class[_]](classOf[Base#Ref[_]], classOf[Base#Ref[_]])) { (obj, args) =>
+          obj.asInstanceOf[ctx.SigmaDslBuilder].verifyUsedAdditionalRegisters(args(0).asInstanceOf[ctx.Ref[ctx.Box]], args(1).asInstanceOf[ctx.Ref[Int]])
+        },
+        mkMethod(clazz, "verifySameForBasicRequiredRegisters", Array[Class[_]](classOf[Base#Ref[_]], classOf[Base#Ref[_]])) { (obj, args) =>
+          obj.asInstanceOf[ctx.SigmaDslBuilder].verifySameForBasicRequiredRegisters(args(0).asInstanceOf[ctx.Ref[ctx.Box]], args(1).asInstanceOf[ctx.Ref[ctx.Box]])
+        },
+        mkMethod(clazz, "verifySameForRequiredRegisters", Array[Class[_]](classOf[Base#Ref[_]], classOf[Base#Ref[_]])) { (obj, args) =>
+          obj.asInstanceOf[ctx.SigmaDslBuilder].verifySameForRequiredRegisters(args(0).asInstanceOf[ctx.Ref[ctx.Box]], args(1).asInstanceOf[ctx.Ref[ctx.Box]])
+        },
+        mkMethod(clazz, "verifySpentToken", Array[Class[_]](classOf[Base#Ref[_]], classOf[Base#Ref[_]], classOf[Base#Ref[_]], classOf[Base#Ref[_]])) { (obj, args) =>
+          obj.asInstanceOf[ctx.SigmaDslBuilder].verifySpentToken(args(0).asInstanceOf[ctx.Ref[ctx.Box]], args(1).asInstanceOf[ctx.Ref[ctx.Box]], 
+            args(2).asInstanceOf[ctx.Ref[ctx.Coll[Byte]]], args(3).asInstanceOf[ctx.Ref[Long]])
         }
       )
     )

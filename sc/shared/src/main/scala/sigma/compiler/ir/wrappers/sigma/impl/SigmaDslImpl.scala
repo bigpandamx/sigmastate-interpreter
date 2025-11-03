@@ -2328,6 +2328,48 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
         Array[AnyRef](l),
         true, false, element[BigInt]))
     }
+
+    def verifyBoxHasMarkerToken(box: Ref[Box], tokenId: Ref[Coll[Byte]]): Ref[Boolean] = {
+      asRep[Boolean](mkMethodCall(self,
+        SigmaDslBuilderClass.getMethod("verifyBoxHasMarkerToken", classOf[Sym], classOf[Sym]),
+        Array[AnyRef](box, tokenId),
+        true, false, element[Boolean]))
+    }
+
+    def verifyBoxHasNoMarkerToken(box: Ref[Box], tokenId: Ref[Coll[Byte]]): Ref[Boolean] = {
+      asRep[Boolean](mkMethodCall(self,
+        SigmaDslBuilderClass.getMethod("verifyBoxHasNoMarkerToken", classOf[Sym], classOf[Sym]),
+        Array[AnyRef](box, tokenId),
+        true, false, element[Boolean]))
+    }
+
+    def verifyUsedAdditionalRegisters(box: Ref[Box], used: Ref[Int]): Ref[Boolean] = {
+      asRep[Boolean](mkMethodCall(self,
+        SigmaDslBuilderClass.getMethod("verifyUsedAdditionalRegisters", classOf[Sym], classOf[Sym]),
+        Array[AnyRef](box, used),
+        true, false, element[Boolean]))
+    }
+
+    def verifySameForBasicRequiredRegisters(inBox: Ref[Box], outBox: Ref[Box]): Ref[Boolean] = {
+      asRep[Boolean](mkMethodCall(self,
+        SigmaDslBuilderClass.getMethod("verifySameForBasicRequiredRegisters", classOf[Sym], classOf[Sym]),
+        Array[AnyRef](inBox, outBox),
+        true, false, element[Boolean]))
+    }
+
+    def verifySameForRequiredRegisters(inBox: Ref[Box], outBox: Ref[Box]): Ref[Boolean] = {
+      asRep[Boolean](mkMethodCall(self,
+        SigmaDslBuilderClass.getMethod("verifySameForRequiredRegisters", classOf[Sym], classOf[Sym]),
+        Array[AnyRef](inBox, outBox),
+        true, false, element[Boolean]))
+    }
+
+    def verifySpentToken(inBox: Ref[Box], outBox: Ref[Box], tokenId: Ref[Coll[Byte]], amount: Ref[Long]): Ref[Boolean] = {
+      asRep[Boolean](mkMethodCall(self,
+        SigmaDslBuilderClass.getMethod("verifySpentToken", classOf[Sym], classOf[Sym], classOf[Sym], classOf[Sym]),
+        Array[AnyRef](inBox, outBox, tokenId, amount),
+        true, false, element[Boolean]))
+    }
   }
 
   implicit object LiftableSigmaDslBuilder
@@ -2544,6 +2586,48 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
         Array[AnyRef](l),
         true, true, element[BigInt]))
     }
+
+    def verifyBoxHasMarkerToken(box: Ref[Box], tokenId: Ref[Coll[Byte]]): Ref[Boolean] = {
+      asRep[Boolean](mkMethodCall(source,
+        SigmaDslBuilderClass.getMethod("verifyBoxHasMarkerToken", classOf[Sym], classOf[Sym]),
+        Array[AnyRef](box, tokenId),
+        true, true, element[Boolean]))
+    }
+
+    def verifyBoxHasNoMarkerToken(box: Ref[Box], tokenId: Ref[Coll[Byte]]): Ref[Boolean] = {
+      asRep[Boolean](mkMethodCall(source,
+        SigmaDslBuilderClass.getMethod("verifyBoxHasNoMarkerToken", classOf[Sym], classOf[Sym]),
+        Array[AnyRef](box, tokenId),
+        true, true, element[Boolean]))
+    }
+
+    def verifyUsedAdditionalRegisters(box: Ref[Box], used: Ref[Int]): Ref[Boolean] = {
+      asRep[Boolean](mkMethodCall(source,
+        SigmaDslBuilderClass.getMethod("verifyUsedAdditionalRegisters", classOf[Sym], classOf[Sym]),
+        Array[AnyRef](box, used),
+        true, true, element[Boolean]))
+    }
+
+    def verifySameForBasicRequiredRegisters(inBox: Ref[Box], outBox: Ref[Box]): Ref[Boolean] = {
+      asRep[Boolean](mkMethodCall(source,
+        SigmaDslBuilderClass.getMethod("verifySameForBasicRequiredRegisters", classOf[Sym], classOf[Sym]),
+        Array[AnyRef](inBox, outBox),
+        true, true, element[Boolean]))
+    }
+
+    def verifySameForRequiredRegisters(inBox: Ref[Box], outBox: Ref[Box]): Ref[Boolean] = {
+      asRep[Boolean](mkMethodCall(source,
+        SigmaDslBuilderClass.getMethod("verifySameForRequiredRegisters", classOf[Sym], classOf[Sym]),
+        Array[AnyRef](inBox, outBox),
+        true, true, element[Boolean]))
+    }
+
+    def verifySpentToken(inBox: Ref[Box], outBox: Ref[Box], tokenId: Ref[Coll[Byte]], amount: Ref[Long]): Ref[Boolean] = {
+      asRep[Boolean](mkMethodCall(source,
+        SigmaDslBuilderClass.getMethod("verifySpentToken", classOf[Sym], classOf[Sym], classOf[Sym], classOf[Sym]),
+        Array[AnyRef](inBox, outBox, tokenId, amount),
+        true, true, element[Boolean]))
+    }
   }
 
   // entityUnref: single unref method for each type family
@@ -2563,7 +2647,9 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
         Elem.declaredMethods(RClass(classOf[SigmaDslBuilder]), RClass(classOf[SSigmaDslBuilder]), Set(
         "Colls", "verifyZK", "atLeast", "allOf", "allZK", "anyOf", "anyZK", "xorOf", "sigmaProp", "blake2b256",
           "sha256", "byteArrayToBigInt", "longToByteArray", "byteArrayToLong", "proveDlog", "proveDHTuple", "groupGenerator",
-          "substConstants", "decodePoint", "avlTree", "xor", "encodeNBits", "decodeNBits", "serialize", "fromBigEndianBytes", "powHit", "deserializeTo"
+          "substConstants", "decodePoint", "avlTree", "xor", "encodeNBits", "decodeNBits", "serialize", "fromBigEndianBytes", "powHit", "deserializeTo",
+          "verifyBoxHasMarkerToken", "verifyBoxHasNoMarkerToken", "verifyUsedAdditionalRegisters", 
+          "verifySameForBasicRequiredRegisters", "verifySameForRequiredRegisters", "verifySpentToken"
         ))
     }
   }
@@ -2771,6 +2857,66 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
         case _ => Nullable.None
       }
       def unapply(exp: Sym): Nullable[(Ref[SigmaDslBuilder], Ref[Coll[Byte]], Ref[Coll[Byte]])] = unapply(exp.node)
+    }
+
+    object verifyBoxHasMarkerToken {
+      def unapply(d: Def[_]): Nullable[(Ref[SigmaDslBuilder], Ref[Box], Ref[Coll[Byte]])] = d match {
+        case MethodCall(receiver, method, args, _) if method.getName == "verifyBoxHasMarkerToken" && receiver.elem.isInstanceOf[SigmaDslBuilderElem[_]] =>
+          val res = (receiver, args(0), args(1))
+          Nullable(res).asInstanceOf[Nullable[(Ref[SigmaDslBuilder], Ref[Box], Ref[Coll[Byte]])]]
+        case _ => Nullable.None
+      }
+      def unapply(exp: Sym): Nullable[(Ref[SigmaDslBuilder], Ref[Box], Ref[Coll[Byte]])] = unapply(exp.node)
+    }
+
+    object verifyBoxHasNoMarkerToken {
+      def unapply(d: Def[_]): Nullable[(Ref[SigmaDslBuilder], Ref[Box], Ref[Coll[Byte]])] = d match {
+        case MethodCall(receiver, method, args, _) if method.getName == "verifyBoxHasNoMarkerToken" && receiver.elem.isInstanceOf[SigmaDslBuilderElem[_]] =>
+          val res = (receiver, args(0), args(1))
+          Nullable(res).asInstanceOf[Nullable[(Ref[SigmaDslBuilder], Ref[Box], Ref[Coll[Byte]])]]
+        case _ => Nullable.None
+      }
+      def unapply(exp: Sym): Nullable[(Ref[SigmaDslBuilder], Ref[Box], Ref[Coll[Byte]])] = unapply(exp.node)
+    }
+
+    object verifyUsedAdditionalRegisters {
+      def unapply(d: Def[_]): Nullable[(Ref[SigmaDslBuilder], Ref[Box], Ref[Int])] = d match {
+        case MethodCall(receiver, method, args, _) if method.getName == "verifyUsedAdditionalRegisters" && receiver.elem.isInstanceOf[SigmaDslBuilderElem[_]] =>
+          val res = (receiver, args(0), args(1))
+          Nullable(res).asInstanceOf[Nullable[(Ref[SigmaDslBuilder], Ref[Box], Ref[Int])]]
+        case _ => Nullable.None
+      }
+      def unapply(exp: Sym): Nullable[(Ref[SigmaDslBuilder], Ref[Box], Ref[Int])] = unapply(exp.node)
+    }
+
+    object verifySameForBasicRequiredRegisters {
+      def unapply(d: Def[_]): Nullable[(Ref[SigmaDslBuilder], Ref[Box], Ref[Box])] = d match {
+        case MethodCall(receiver, method, args, _) if method.getName == "verifySameForBasicRequiredRegisters" && receiver.elem.isInstanceOf[SigmaDslBuilderElem[_]] =>
+          val res = (receiver, args(0), args(1))
+          Nullable(res).asInstanceOf[Nullable[(Ref[SigmaDslBuilder], Ref[Box], Ref[Box])]]
+        case _ => Nullable.None
+      }
+      def unapply(exp: Sym): Nullable[(Ref[SigmaDslBuilder], Ref[Box], Ref[Box])] = unapply(exp.node)
+    }
+
+    object verifySameForRequiredRegisters {
+      def unapply(d: Def[_]): Nullable[(Ref[SigmaDslBuilder], Ref[Box], Ref[Box])] = d match {
+        case MethodCall(receiver, method, args, _) if method.getName == "verifySameForRequiredRegisters" && receiver.elem.isInstanceOf[SigmaDslBuilderElem[_]] =>
+          val res = (receiver, args(0), args(1))
+          Nullable(res).asInstanceOf[Nullable[(Ref[SigmaDslBuilder], Ref[Box], Ref[Box])]]
+        case _ => Nullable.None
+      }
+      def unapply(exp: Sym): Nullable[(Ref[SigmaDslBuilder], Ref[Box], Ref[Box])] = unapply(exp.node)
+    }
+
+    object verifySpentToken {
+      def unapply(d: Def[_]): Nullable[(Ref[SigmaDslBuilder], Ref[Box], Ref[Box], Ref[Coll[Byte]], Ref[Long])] = d match {
+        case MethodCall(receiver, method, args, _) if method.getName == "verifySpentToken" && receiver.elem.isInstanceOf[SigmaDslBuilderElem[_]] =>
+          val res = (receiver, args(0), args(1), args(2), args(3))
+          Nullable(res).asInstanceOf[Nullable[(Ref[SigmaDslBuilder], Ref[Box], Ref[Box], Ref[Coll[Byte]], Ref[Long])]]
+        case _ => Nullable.None
+      }
+      def unapply(exp: Sym): Nullable[(Ref[SigmaDslBuilder], Ref[Box], Ref[Box], Ref[Coll[Byte]], Ref[Long])] = unapply(exp.node)
     }
   }
 } // of object SigmaDslBuilder

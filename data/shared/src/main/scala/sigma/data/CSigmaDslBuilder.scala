@@ -288,6 +288,67 @@ class CSigmaDslBuilder extends SigmaDslBuilder { dsl =>
   override def none[T]()(implicit cT: RType[T]): Option[T] = {
     None
   }
+
+  override def verifyBoxHasMarkerToken(box: Box, tokenId: Coll[Byte]): Boolean = {
+    box.tokens.exists { case (id, amount) => 
+      id == tokenId && amount >= 1L 
+    }
+  }
+
+  override def verifyBoxHasNoMarkerToken(box: Box, tokenId: Coll[Byte]): Boolean = {
+    box.tokens.forall { case (id, _) => 
+      id != tokenId 
+    }
+  }
+
+  override def verifyUsedAdditionalRegisters(box: Box, expectedAdditionalRegisters: Int): Boolean = {
+    // Check additional registers R4-R9 for any defined values
+    val additionalRegs = Array(
+      box.getReg(4),
+      box.getReg(5), 
+      box.getReg(6),
+      box.getReg(7),
+      box.getReg(8),
+      box.getReg(9)
+    )
+    val hasR4 = additionalRegs(0).isDefined
+    val hasR5 = additionalRegs(1).isDefined
+    val hasR6 = additionalRegs(2).isDefined
+    val hasR7 = additionalRegs(3).isDefined
+    val hasR8 = additionalRegs(4).isDefined
+    val hasR9 = additionalRegs(5).isDefined
+
+    (expectedAdditionalRegisters >= 1 || !hasR4) &&
+    (expectedAdditionalRegisters >= 2 || !hasR5) &&
+    (expectedAdditionalRegisters >= 3 || !hasR6) &&
+    (expectedAdditionalRegisters >= 4 || !hasR7) &&
+    (expectedAdditionalRegisters >= 5 || !hasR8) &&
+    (expectedAdditionalRegisters >= 6 || !hasR9)
+  }
+
+  override def verifySameForBasicRequiredRegisters(inBox: Box, outBox: Box): Boolean = {
+    inBox.value == outBox.value &&
+    inBox.propositionBytes == outBox.propositionBytes
+  }
+
+  override def verifySameForRequiredRegisters(inBox: Box, outBox: Box): Boolean = {
+    verifySameForBasicRequiredRegisters(inBox, outBox) &&
+    inBox.tokens == outBox.tokens
+  }
+
+  override def verifySpentToken(inBox: Box, outBox: Box, tokenId: Coll[Byte], amount: Long): Boolean = {
+    inBox.tokens.forall { case (inTokenId, inAmount) =>
+      if (inTokenId == tokenId) {
+        outBox.tokens.exists { case (outTokenId, outAmount) =>
+          outTokenId == inTokenId && inAmount == outAmount + amount
+        }
+      } else {
+        outBox.tokens.exists { case (outTokenId, outAmount) =>
+          outTokenId == inTokenId && inAmount == outAmount
+        }
+      }
+    }
+  }
 }
 
 /** Default singleton instance of Global object, which implements global ErgoTree functions. */

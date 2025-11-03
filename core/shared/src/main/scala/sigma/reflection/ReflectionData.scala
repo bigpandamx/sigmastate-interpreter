@@ -546,6 +546,25 @@ object ReflectionData {
         },
         mkMethod(clazz, "none", Array[Class[_]](classOf[RType[_]])) { (obj, args) =>
           obj.asInstanceOf[SigmaDslBuilder].none()(args(0).asInstanceOf[RType[_]])
+        },
+        mkMethod(clazz, "verifyBoxHasMarkerToken", Array[Class[_]](classOf[Box], cColl)) { (obj, args) =>
+          obj.asInstanceOf[SigmaDslBuilder].verifyBoxHasMarkerToken(args(0).asInstanceOf[Box], args(1).asInstanceOf[Coll[Byte]])
+        },
+        mkMethod(clazz, "verifyBoxHasNoMarkerToken", Array[Class[_]](classOf[Box], cColl)) { (obj, args) =>
+          obj.asInstanceOf[SigmaDslBuilder].verifyBoxHasNoMarkerToken(args(0).asInstanceOf[Box], args(1).asInstanceOf[Coll[Byte]])
+        },
+        mkMethod(clazz, "verifyUsedAdditionalRegisters", Array[Class[_]](classOf[Box], classOf[Int])) { (obj, args) =>
+          obj.asInstanceOf[SigmaDslBuilder].verifyUsedAdditionalRegisters(args(0).asInstanceOf[Box], args(1).asInstanceOf[Int])
+        },
+        mkMethod(clazz, "verifySameForBasicRequiredRegisters", Array[Class[_]](classOf[Box], classOf[Box])) { (obj, args) =>
+          obj.asInstanceOf[SigmaDslBuilder].verifySameForBasicRequiredRegisters(args(0).asInstanceOf[Box], args(1).asInstanceOf[Box])
+        },
+        mkMethod(clazz, "verifySameForRequiredRegisters", Array[Class[_]](classOf[Box], classOf[Box])) { (obj, args) =>
+          obj.asInstanceOf[SigmaDslBuilder].verifySameForRequiredRegisters(args(0).asInstanceOf[Box], args(1).asInstanceOf[Box])
+        },
+        mkMethod(clazz, "verifySpentToken", Array[Class[_]](classOf[Box], classOf[Box], cColl, classOf[Long])) { (obj, args) =>
+          obj.asInstanceOf[SigmaDslBuilder].verifySpentToken(args(0).asInstanceOf[Box], args(1).asInstanceOf[Box], 
+            args(2).asInstanceOf[Coll[Byte]], args(3).asInstanceOf[Long])
         }
       )
     )

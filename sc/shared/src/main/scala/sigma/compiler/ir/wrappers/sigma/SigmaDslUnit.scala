@@ -142,6 +142,12 @@ import scalan._
       def deserializeTo[T](bytes: Ref[Coll[Byte]])(implicit cT: Elem[T]): Ref[T]
       def some[T](value: Ref[T])(implicit cT: Elem[T]): Ref[WOption[T]]
       def none[T]()(implicit cT: Elem[T]): Ref[WOption[T]]
+      def verifyBoxHasMarkerToken(box: Ref[Box], tokenId: Ref[Coll[Byte]]): Ref[Boolean]
+      def verifyBoxHasNoMarkerToken(box: Ref[Box], tokenId: Ref[Coll[Byte]]): Ref[Boolean]
+      def verifyUsedAdditionalRegisters(box: Ref[Box], expectedAdditionalRegisters: Ref[Int]): Ref[Boolean]
+      def verifySameForBasicRequiredRegisters(inBox: Ref[Box], outBox: Ref[Box]): Ref[Boolean]
+      def verifySameForRequiredRegisters(inBox: Ref[Box], outBox: Ref[Box]): Ref[Boolean]
+      def verifySpentToken(inBox: Ref[Box], outBox: Ref[Box], tokenId: Ref[Coll[Byte]], amount: Ref[Long]): Ref[Boolean]
     };
     trait CostModelCompanion;
     trait BigIntCompanion;

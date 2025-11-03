@@ -838,6 +838,13 @@ trait SigmaContract {
   def substConstants[T](scriptBytes: Coll[Byte],
       positions: Coll[Int],
       newValues: Coll[T]): Coll[Byte] = this.builder.substConstants(scriptBytes, positions, newValues)
+
+  def verifyBoxHasMarkerToken(box: Box, tokenId: Coll[Byte]): Boolean = this.builder.verifyBoxHasMarkerToken(box, tokenId)
+  def verifyBoxHasNoMarkerToken(box: Box, tokenId: Coll[Byte]): Boolean = this.builder.verifyBoxHasNoMarkerToken(box, tokenId)
+  def verifyUsedAdditionalRegisters(box: Box, used: Int): Boolean = this.builder.verifyUsedAdditionalRegisters(box, used)
+  def verifySameForBasicRequiredRegisters(inBox: Box, outBox: Box): Boolean = this.builder.verifySameForBasicRequiredRegisters(inBox, outBox)
+  def verifySameForRequiredRegisters(inBox: Box, outBox: Box): Boolean = this.builder.verifySameForRequiredRegisters(inBox, outBox)
+  def verifySpentToken(inBox: Box, outBox: Box, tokenId: Coll[Byte], amount: Long): Boolean = this.builder.verifySpentToken(inBox, outBox, tokenId, amount)
 }
 
 /** Runtime representation of SGlobal ErgoTree type.
@@ -988,6 +995,53 @@ trait SigmaDslBuilder {
 
   /** Returns a number decoded from provided big-endian bytes array. */
   def fromBigEndianBytes[T](bytes: Coll[Byte])(implicit cT: RType[T]): T
+
+  /** Verifies that the given box contains at least one token with the specified token ID and amount >= 1.
+    * @param box the box to check for tokens
+    * @param tokenId the token ID to search for
+    * @return true if the box contains the token, false otherwise
+    */
+  def verifyBoxHasMarkerToken(box: Box, tokenId: Coll[Byte]): Boolean
+
+  /** Verifies that the given box does not contain any tokens with the specified token ID.
+    * @param box the box to check for tokens
+    * @param tokenId the token ID to check absence of
+    * @return true if the box does not contain the token, false otherwise
+    */
+  def verifyBoxHasNoMarkerToken(box: Box, tokenId: Coll[Byte]): Boolean
+
+  /** Verifies that exactly the specified number of additional registers (R4-R9) are used in the box.
+    * Additional registers beyond the 'used' count should be empty.
+    * @param box the box to check registers for
+    * @param used number of additional registers that should be used (0-6)
+    * @return true if the register usage matches the specified count
+    */
+  def verifyUsedAdditionalRegisters(box: Box, used: Int): Boolean
+
+  /** Verifies that two boxes have the same basic required properties: value and propositionBytes.
+    * @param inBox the input box to compare
+    * @param outBox the output box to compare
+    * @return true if both boxes have the same value and propositionBytes
+    */
+  def verifySameForBasicRequiredRegisters(inBox: Box, outBox: Box): Boolean
+
+  /** Verifies that two boxes have the same required registers: value, propositionBytes, and tokens.
+    * @param inBox the input box to compare
+    * @param outBox the output box to compare
+    * @return true if both boxes have the same value, propositionBytes, and tokens
+    */
+  def verifySameForRequiredRegisters(inBox: Box, outBox: Box): Boolean
+
+  /** Verifies that the specified token was spent correctly between input and output boxes.
+    * For the specified token, checks that inBox amount equals outBox amount plus spent amount.
+    * For all other tokens, checks that amounts are preserved exactly.
+    * @param inBox the input box
+    * @param outBox the output box
+    * @param tokenId the token ID that was spent
+    * @param amount the amount of the token that was spent
+    * @return true if token spending is verified correctly
+    */
+  def verifySpentToken(inBox: Box, outBox: Box, tokenId: Coll[Byte], amount: Long): Boolean
 
   /** Constructs wrapped into optional type `value`  */
   def some[T](value: T)(implicit cT: RType[T]): Option[T]

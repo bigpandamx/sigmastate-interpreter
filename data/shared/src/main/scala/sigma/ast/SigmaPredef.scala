@@ -502,6 +502,120 @@ object SigmaPredef {
       )
     )
 
+    val VerifyBoxHasMarkerTokenFunc = PredefinedFunc("verifyBoxHasMarkerToken",
+      Lambda(Array("box" -> SBox, "tokenId" -> SByteArray), SBoolean, None),
+      PredefFuncInfo(
+        { case (_, Seq(box: Value[SBox.type]@unchecked, tokenId: Value[SByteArray]@unchecked)) =>
+          MethodCall(
+            Global,
+            SGlobalMethods.verifyBoxHasMarkerTokenMethod,
+            IndexedSeq(box, tokenId),
+            Map()
+          )
+        }),
+      OperationInfo(MethodCall,
+        """Verifies that the given box contains at least one token with the specified token ID and amount >= 1.
+        """.stripMargin,
+        Seq(ArgInfo("box", "the box to check for tokens"),
+            ArgInfo("tokenId", "the token ID to search for")))
+    )
+
+    val VerifyBoxHasNoMarkerTokenFunc = PredefinedFunc("verifyBoxHasNoMarkerToken",
+      Lambda(Array("box" -> SBox, "tokenId" -> SByteArray), SBoolean, None),
+      PredefFuncInfo(
+        { case (_, Seq(box: Value[SBox.type]@unchecked, tokenId: Value[SByteArray]@unchecked)) =>
+          MethodCall(
+            Global,
+            SGlobalMethods.verifyBoxHasNoMarkerTokenMethod,
+            IndexedSeq(box, tokenId),
+            Map()
+          )
+        }),
+      OperationInfo(MethodCall,
+        """Verifies that the given box does not contain any tokens with the specified token ID.
+        """.stripMargin,
+        Seq(ArgInfo("box", "the box to check for tokens"),
+            ArgInfo("tokenId", "the token ID to check absence of")))
+    )
+
+    val VerifyUsedAdditionalRegistersFunc = PredefinedFunc("verifyUsedAdditionalRegisters",
+      Lambda(Array("box" -> SBox, "used" -> SInt), SBoolean, None),
+      PredefFuncInfo(
+        { case (_, Seq(box: Value[SBox.type]@unchecked, used: Value[SInt.type]@unchecked)) =>
+          MethodCall(
+            Global,
+            SGlobalMethods.verifyUsedAdditionalRegistersMethod,
+            IndexedSeq(box, used),
+            Map()
+          )
+        }),
+      OperationInfo(MethodCall,
+        """Verifies that exactly the specified number of additional registers (R4-R9) are used in the box.
+         | Additional registers beyond the 'used' count should be empty.
+        """.stripMargin,
+        Seq(ArgInfo("box", "the box to check registers for"),
+            ArgInfo("used", "number of additional registers that should be used (0-6)")))
+    )
+
+    val VerifySameForBasicRequiredRegistersFunc = PredefinedFunc("verifySameForBasicRequiredRegisters",
+      Lambda(Array("inBox" -> SBox, "outBox" -> SBox), SBoolean, None),
+      PredefFuncInfo(
+        { case (_, Seq(inBox: Value[SBox.type]@unchecked, outBox: Value[SBox.type]@unchecked)) =>
+          MethodCall(
+            Global,
+            SGlobalMethods.verifySameForBasicRequiredRegistersMethod,
+            IndexedSeq(inBox, outBox),
+            Map()
+          )
+        }),
+      OperationInfo(MethodCall,
+        """Verifies that two boxes have the same basic required properties: value and propositionBytes.
+        """.stripMargin,
+        Seq(ArgInfo("inBox", "the input box to compare"),
+            ArgInfo("outBox", "the output box to compare")))
+    )
+
+    val VerifySameForRequiredRegistersFunc = PredefinedFunc("verifySameForRequiredRegisters",
+      Lambda(Array("inBox" -> SBox, "outBox" -> SBox), SBoolean, None),
+      PredefFuncInfo(
+        { case (_, Seq(inBox: Value[SBox.type]@unchecked, outBox: Value[SBox.type]@unchecked)) =>
+          MethodCall(
+            Global,
+            SGlobalMethods.verifySameForRequiredRegistersMethod,
+            IndexedSeq(inBox, outBox),
+            Map()
+          )
+        }),
+      OperationInfo(MethodCall,
+        """Verifies that two boxes have the same required registers: value, propositionBytes, and tokens.
+        """.stripMargin,
+        Seq(ArgInfo("inBox", "the input box to compare"),
+            ArgInfo("outBox", "the output box to compare")))
+    )
+
+    val VerifySpentTokenFunc = PredefinedFunc("verifySpentToken",
+      Lambda(Array("inBox" -> SBox, "outBox" -> SBox, "tokenId" -> SByteArray, "amount" -> SLong), SBoolean, None),
+      PredefFuncInfo(
+        { case (_, Seq(inBox: Value[SBox.type]@unchecked, outBox: Value[SBox.type]@unchecked, 
+                       tokenId: Value[SByteArray]@unchecked, amount: Value[SLong.type]@unchecked)) =>
+          MethodCall(
+            Global,
+            SGlobalMethods.verifySpentTokenMethod,
+            IndexedSeq(inBox, outBox, tokenId, amount),
+            Map()
+          )
+        }),
+      OperationInfo(MethodCall,
+        """Verifies that the specified token was spent correctly between input and output boxes.
+         | For the specified token, checks that inBox amount equals outBox amount plus spent amount.
+         | For all other tokens, checks that amounts are preserved exactly.
+        """.stripMargin,
+        Seq(ArgInfo("inBox", "the input box"),
+            ArgInfo("outBox", "the output box"),
+            ArgInfo("tokenId", "the token ID that was spent"),
+            ArgInfo("amount", "the amount of the token that was spent")))
+    )
+
     val ExecuteFromSelfRegFunc = PredefinedFunc("executeFromSelfReg",
       Lambda(
         Seq(paramT),
@@ -562,7 +676,13 @@ object SigmaPredef {
       SerializeFunc,
       DeserializeToFunc,
       GetVarFromInputFunc,
-      FromBigEndianBytesFunc
+      FromBigEndianBytesFunc,
+      VerifyBoxHasMarkerTokenFunc,
+      VerifyBoxHasNoMarkerTokenFunc,
+      VerifyUsedAdditionalRegistersFunc,
+      VerifySameForBasicRequiredRegistersFunc,
+      VerifySameForRequiredRegistersFunc,
+      VerifySpentTokenFunc
     ).map(f => f.name -> f).toMap
 
     def comparisonOp(symbolName: String, opDesc: ValueCompanion, desc: String, args: Seq[ArgInfo]) = {
