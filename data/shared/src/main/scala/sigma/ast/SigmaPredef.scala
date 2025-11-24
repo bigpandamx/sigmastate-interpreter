@@ -502,6 +502,226 @@ object SigmaPredef {
       )
     )
 
+    // ========== Utility Functions for Issue #1037 ==========
+    // Compiler-level helpers that expand to existing ErgoTree operations
+    
+    val VerifyBoxHasMarkerTokenFunc = PredefinedFunc("verifyBoxHasMarkerToken",
+      Lambda(Array("box" -> SBox, "tokenId" -> SByteArray), SBoolean, None),
+      PredefFuncInfo(
+        { case (_, Seq(box: SValue, tokenId: SValue)) =>
+          // Expand to: box.tokens.exists({ (t: (Coll[Byte], Long)) => t._1 == tokenId && t._2 >= 1L })
+          val tokensCall = MethodCall(
+            box.asValue[SBox.type],
+            SBoxMethods.tokensMethod,
+            IndexedSeq(),
+            Map()
+          )
+          val lambda = mkLambda(
+            IndexedSeq(("t", STuple(SByteArray, SLong))),
+            SBoolean,
+            Some({
+              val tVar = mkIdent("t", STuple(SByteArray, SLong))
+              val t1 = SelectField(tVar.asValue[STuple], 1.toByte).asValue[SCollection[SByte.type]]
+              val t2 = SelectField(tVar.asValue[STuple], 2.toByte).asValue[SLong.type]
+              val idEq = mkEQ(t1, tokenId.asValue[SCollection[SByte.type]])
+              val amtCheck = mkGE(t2, LongConstant(1L))
+              mkBinAnd(idEq, amtCheck)
+            })
+          )
+          MethodCall(
+            tokensCall.asValue[SCollection[STuple]],
+            SCollectionMethods.ExistsMethod.withConcreteTypes(Map(STypeVar("IV") -> STuple(SByteArray, SLong))),
+            IndexedSeq(lambda),
+            Map()
+          )
+        }),
+      OperationInfo(Apply,
+        """Verifies box contains a token with specified ID and amount >= 1.
+        """.stripMargin,
+        Seq(ArgInfo("box", "box to check"), ArgInfo("tokenId", "token ID")))
+    )
+
+    val VerifyBoxHasNoMarkerTokenFunc = PredefinedFunc("verifyBoxHasNoMarkerToken",
+      Lambda(Array("box" -> SBox, "tokenId" -> SByteArray), SBoolean, None),
+      PredefFuncInfo(
+        { case (_, Seq(box: SValue, tokenId: SValue)) =>
+          // Expand to: box.tokens.forall({ (t: (Coll[Byte], Long)) => t._1 != tokenId })
+          val tokensCall = MethodCall(
+            box.asValue[SBox.type],
+            SBoxMethods.tokensMethod,
+            IndexedSeq(),
+            Map()
+          )
+          val lambda = mkLambda(
+            IndexedSeq(("t", STuple(SByteArray, SLong))),
+            SBoolean,
+            Some({
+              val tVar = mkIdent("t", STuple(SByteArray, SLong))
+              val t1 = SelectField(tVar.asValue[STuple], 1.toByte).asValue[SCollection[SByte.type]]
+              mkNEQ(t1, tokenId.asValue[SCollection[SByte.type]])
+            })
+          )
+          MethodCall(
+            tokensCall.asValue[SCollection[STuple]],
+            SCollectionMethods.ForallMethod.withConcreteTypes(Map(STypeVar("IV") -> STuple(SByteArray, SLong))),
+            IndexedSeq(lambda),
+            Map()
+          )
+        }),
+      OperationInfo(Apply,
+        """Verifies box does NOT contain specified token ID.
+        """.stripMargin,
+        Seq(ArgInfo("box", "box to check"), ArgInfo("tokenId", "token ID")))
+    )
+
+    val VerifyUsedAdditionalRegistersFunc = PredefinedFunc("verifyUsedAdditionalRegisters",
+      Lambda(Array("box" -> SBox, "expectedCount" -> SInt), SBoolean, None),
+      PredefFuncInfo(
+        { case (_, Seq(box: SValue, count: SValue)) =>
+          // Expand to conjunction: (count >= 1 || !box.R4[Any].isDefined) && ... && (count >= 6 || !box.R9[Any].isDefined)
+          val checks = (4 to 9).map { regNum =>
+            val regId = org.ergoplatform.ErgoBox.registerByIndex(regNum)
+            val regAccess = mkExtractRegisterAs(box.asValue[SBox.type], regId, SOption(SAny))
+            val isDef = MethodCall(
+              regAccess.asValue[SOption[SAny.type]],
+              SOptionMethods.IsDefinedMethod,
+              IndexedSeq(),
+              Map()
+            )
+            val notDef = mkLogicalNot(isDef.asValue[SBoolean.type])
+            val countCheck = mkGE(count.asValue[SInt.type], IntConstant(regNum - 3))
+            mkBinOr(countCheck, notDef)
+          }
+          checks.reduce((a, b) => mkBinAnd(a, b))
+        }),
+      OperationInfo(Apply,
+        """Validates box uses only specified number of registers (R4-R9).
+        """.stripMargin,
+        Seq(ArgInfo("box", "box to check"), ArgInfo("expectedCount", "expected count (0-6)")))
+    )
+
+    val VerifySameForBasicRequiredRegistersFunc = PredefinedFunc("verifySameForBasicRequiredRegisters",
+      Lambda(Array("inBox" -> SBox, "outBox" -> SBox), SBoolean, None),
+      PredefFuncInfo(
+        { case (_, Seq(inBox: SValue, outBox: SValue)) =>
+          // Expand to: inBox.value == outBox.value && inBox.propositionBytes == outBox.propositionBytes
+          val inValue = mkExtractAmount(inBox.asValue[SBox.type])
+          val outValue = mkExtractAmount(outBox.asValue[SBox.type])
+          val valueEq = mkEQ(inValue, outValue)
+          
+          val inProp = mkExtractScriptBytes(inBox.asValue[SBox.type])
+          val outProp = mkExtractScriptBytes(outBox.asValue[SBox.type])
+          val propEq = mkEQ(inProp, outProp)
+          
+          mkBinAnd(valueEq, propEq)
+        }),
+      OperationInfo(Apply,
+        """Compares value and propositionBytes between two boxes.
+        """.stripMargin,
+        Seq(ArgInfo("inBox", "input box"), ArgInfo("outBox", "output box")))
+    )
+
+    val VerifySameForRequiredRegistersFunc = PredefinedFunc("verifySameForRequiredRegisters",
+      Lambda(Array("inBox" -> SBox, "outBox" -> SBox), SBoolean, None),
+      PredefFuncInfo(
+        { case (_, Seq(inBox: SValue, outBox: SValue)) =>
+          // Expand to: inBox.value == outBox.value && inBox.propositionBytes == outBox.propositionBytes && inBox.tokens == outBox.tokens
+          val inValue = mkExtractAmount(inBox.asValue[SBox.type])
+          val outValue = mkExtractAmount(outBox.asValue[SBox.type])
+          val valueEq = mkEQ(inValue, outValue)
+          
+          val inProp = mkExtractScriptBytes(inBox.asValue[SBox.type])
+          val outProp = mkExtractScriptBytes(outBox.asValue[SBox.type])
+          val propEq = mkEQ(inProp, outProp)
+          
+          val inTokens = MethodCall(inBox.asValue[SBox.type], SBoxMethods.tokensMethod, IndexedSeq(), Map())
+          val outTokens = MethodCall(outBox.asValue[SBox.type], SBoxMethods.tokensMethod, IndexedSeq(), Map())
+          val tokensEq = mkEQ(inTokens, outTokens)
+          
+          mkBinAnd(mkBinAnd(valueEq, propEq), tokensEq)
+        }),
+      OperationInfo(Apply,
+        """Compares value, propositionBytes, and tokens between two boxes.
+        """.stripMargin,
+        Seq(ArgInfo("inBox", "input box"), ArgInfo("outBox", "output box")))
+    )
+
+    val VerifySpentTokenFunc = PredefinedFunc("verifySpentToken",
+      Lambda(Array("inBox" -> SBox, "outBox" -> SBox, "tokenId" -> SByteArray, "amount" -> SLong), SBoolean, None),
+      PredefFuncInfo(
+        { case (_, Seq(inBox: SValue, outBox: SValue, tokenId: SValue, amount: SValue)) =>
+          // Expand to full forall/exists logic
+          val inTokens = MethodCall(inBox.asValue[SBox.type], SBoxMethods.tokensMethod, IndexedSeq(), Map())
+          val outTokens = MethodCall(outBox.asValue[SBox.type], SBoxMethods.tokensMethod, IndexedSeq(), Map())
+          
+          val forallLambda = mkLambda(
+            IndexedSeq(("it", STuple(SByteArray, SLong))),
+            SBoolean,
+            Some({
+              val itVar = mkIdent("it", STuple(SByteArray, SLong))
+              val it1 = SelectField(itVar.asValue[STuple], 1.toByte).asValue[SCollection[SByte.type]]
+              val it2 = SelectField(itVar.asValue[STuple], 2.toByte).asValue[SLong.type]
+              
+              // Lambda for matching token (with reduced amount)
+              val existsLambdaMatching = mkLambda(
+                IndexedSeq(("ot", STuple(SByteArray, SLong))),
+                SBoolean,
+                Some({
+                  val otVar = mkIdent("ot", STuple(SByteArray, SLong))
+                  val ot1 = SelectField(otVar.asValue[STuple], 1.toByte).asValue[SCollection[SByte.type]]
+                  val ot2 = SelectField(otVar.asValue[STuple], 2.toByte).asValue[SLong.type]
+                  val idMatch = mkEQ(it1, ot1)
+                  val amtReduced = mkEQ(it2, mkPlus(ot2, amount.asValue[SLong.type]))
+                  mkBinAnd(idMatch, amtReduced)
+                })
+              )
+              
+              // Lambda for other tokens (same amount)
+              val existsLambdaSame = mkLambda(
+                IndexedSeq(("ot", STuple(SByteArray, SLong))),
+                SBoolean,
+                Some({
+                  val otVar = mkIdent("ot", STuple(SByteArray, SLong))
+                  val ot1 = SelectField(otVar.asValue[STuple], 1.toByte).asValue[SCollection[SByte.type]]
+                  val ot2 = SelectField(otVar.asValue[STuple], 2.toByte).asValue[SLong.type]
+                  val idMatch = mkEQ(it1, ot1)
+                  val amtSame = mkEQ(it2, ot2)
+                  mkBinAnd(idMatch, amtSame)
+                })
+              )
+              
+              val condition = mkEQ(it1, tokenId.asValue[SCollection[SByte.type]])
+              val thenBranch = MethodCall(
+                outTokens.asValue[SCollection[STuple]],
+                SCollectionMethods.ExistsMethod.withConcreteTypes(Map(STypeVar("IV") -> STuple(SByteArray, SLong))),
+                IndexedSeq(existsLambdaMatching),
+                Map()
+              )
+              val elseBranch = MethodCall(
+                outTokens.asValue[SCollection[STuple]],
+                SCollectionMethods.ExistsMethod.withConcreteTypes(Map(STypeVar("IV") -> STuple(SByteArray, SLong))),
+                IndexedSeq(existsLambdaSame),
+                Map()
+              )
+              
+              If(condition, thenBranch, elseBranch)
+            })
+          )
+          
+          MethodCall(
+            inTokens.asValue[SCollection[STuple]],
+            SCollectionMethods.ForallMethod.withConcreteTypes(Map(STypeVar("IV") -> STuple(SByteArray, SLong))),
+            IndexedSeq(forallLambda),
+            Map()
+          )
+        }),
+      OperationInfo(Apply,
+        """Verifies token amount was properly spent between input/output boxes.
+        """.stripMargin,
+        Seq(ArgInfo("inBox", "input box"), ArgInfo("outBox", "output box"), 
+            ArgInfo("tokenId", "token ID"), ArgInfo("amount", "amount spent")))
+    )
+
     val ExecuteFromSelfRegFunc = PredefinedFunc("executeFromSelfReg",
       Lambda(
         Seq(paramT),
@@ -562,7 +782,14 @@ object SigmaPredef {
       SerializeFunc,
       DeserializeToFunc,
       GetVarFromInputFunc,
-      FromBigEndianBytesFunc
+      FromBigEndianBytesFunc,
+      // Utility functions for Issue #1037 - compiler-level only, no new opcodes
+      VerifyBoxHasMarkerTokenFunc,
+      VerifyBoxHasNoMarkerTokenFunc,
+      VerifyUsedAdditionalRegistersFunc,
+      VerifySameForBasicRequiredRegistersFunc,
+      VerifySameForRequiredRegistersFunc,
+      VerifySpentTokenFunc
     ).map(f => f.name -> f).toMap
 
     def comparisonOp(symbolName: String, opDesc: ValueCompanion, desc: String, args: Seq[ArgInfo]) = {
